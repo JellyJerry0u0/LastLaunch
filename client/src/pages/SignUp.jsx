@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const TYPING_SPEED = 70; // ms per character
 const TV_ON_DURATION = 700; // ms
+const TV_OFF_DURATION = 700; // ms
+const MSG_TYPING_SPEED = 80;
+const MSGS = ["안녕하세용", "저는바보입니당"];
 const LABELS = [
   { key: 'id', text: 'ID' },
   { key: 'pw', text: 'PW' },
@@ -14,6 +18,13 @@ const SignUp = () => {
   const [typedLabels, setTypedLabels] = useState(['', '', '', '']);
   const [focus, setFocus] = useState({ id: false, pw: false, name: false });
   const [tvOn, setTvOn] = useState(true);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [tvOff, setTvOff] = useState(false);
+  const [showMessage, setShowMessage] = useState(false);
+  const [msgTyped, setMsgTyped] = useState(["", ""]);
+  const [canClick, setCanClick] = useState(false);
+  const navigate = useNavigate();
 
   // TV ON 애니메이션 후 폼 표시
   useEffect(() => {
@@ -46,6 +57,47 @@ const SignUp = () => {
     return () => { typing = false; };
   }, [tvOn]);
 
+  // 회원가입 성공 시 TV OFF → 메시지 타이핑 → 클릭 대기
+  useEffect(() => {
+    if (message !== 'sign up complete') return;
+    setTimeout(() => setTvOff(true), 400); // 약간의 딜레이 후 TV OFF
+  }, [message]);
+
+  // TV OFF 끝나면 메시지 타이핑 시작
+  useEffect(() => {
+    if (!tvOff) return;
+    const timeout = setTimeout(() => setShowMessage(true), TV_OFF_DURATION);
+    return () => clearTimeout(timeout);
+  }, [tvOff]);
+
+  // 메시지 타이핑 애니메이션 (끝나면 클릭 대기)
+  useEffect(() => {
+    if (!showMessage) return;
+    let idx = 0;
+    let charIdx = 0;
+    let typing = true;
+    let newMsgTyped = ["", ""];
+    function typeMsg() {
+      if (!typing) return;
+      if (idx >= MSGS.length) {
+        setTimeout(() => setCanClick(true), 400);
+        return;
+      }
+      if (charIdx < MSGS[idx].length) {
+        newMsgTyped[idx] = MSGS[idx].slice(0, charIdx + 1);
+        setMsgTyped([...newMsgTyped]);
+        charIdx++;
+        setTimeout(typeMsg, MSG_TYPING_SPEED);
+      } else {
+        idx++;
+        charIdx = 0;
+        setTimeout(typeMsg, MSG_TYPING_SPEED * 4);
+      }
+    }
+    typeMsg();
+    return () => { typing = false; };
+  }, [showMessage]);
+
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -57,10 +109,35 @@ const SignUp = () => {
     setFocus(f => ({ ...f, [e.target.name]: false }));
   };
 
-  const handleSubmit = e => {
+  const handleSubmit = async e => {
     e.preventDefault();
-    // 회원가입 처리 로직 (추후 구현)
-    alert('회원가입 정보: ' + JSON.stringify(form));
+    setMessage("");
+    setLoading(true);
+    try {
+      const res = await fetch('/api/user/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage('sign up complete');
+        setForm({ id: '', pw: '', name: '' });
+      } else {
+        setMessage(data.message || 'sign up failed');
+      }
+    } catch (err) {
+      setMessage('server error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 메시지 타이핑이 끝난 후 클릭 시 sign in 이동
+  const handleTyperClick = () => {
+    if (canClick) {
+      navigate('/signin');
+    }
   };
 
   return (
@@ -87,6 +164,16 @@ const SignUp = () => {
           pointer-events: all;
           animation: tv-on-anim 0.7s cubic-bezier(.4,2,.6,1) forwards;
         }
+        .tv-off-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          width: 100vw;
+          height: 100vh;
+          background: #000;
+          z-index: 9999;
+          pointer-events: all;
+          animation: tv-off-anim 0.7s cubic-bezier(.4,2,.6,1) forwards;
+        }
         @keyframes tv-on-anim {
           0% {
             transform: scaleY(0);
@@ -102,6 +189,23 @@ const SignUp = () => {
           100% {
             transform: scaleY(1);
             opacity: 0;
+          }
+        }
+        @keyframes tv-off-anim {
+          0% {
+            transform: scaleY(1);
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
+          }
+          80% {
+            transform: scaleY(0.04);
+            opacity: 1;
+          }
+          100% {
+            transform: scaleY(0);
+            opacity: 1;
           }
         }
         .signup-form {
@@ -177,9 +281,38 @@ const SignUp = () => {
         .signup-btn:hover {
           text-shadow: 0 0 12px #fff, 0 0 8px #fff;
         }
+        .signup-message {
+          color: #fff;
+          font-family: 'Fira Mono', Consolas, Menlo, Monaco, monospace;
+          font-size: 1rem;
+          margin-top: 16px;
+          min-height: 1.2em;
+        }
+        .signup-typer {
+          color: #fff;
+          font-family: 'Fira Mono', Consolas, Menlo, Monaco, monospace;
+          font-size: 1.3rem;
+          text-align: center;
+          margin-top: 12vh;
+          letter-spacing: 0.04em;
+          line-height: 2.2;
+          cursor: pointer;
+          user-select: none;
+        }
+        .signup-typer.dim {
+          opacity: 0.5;
+          cursor: default;
+        }
       `}</style>
       {tvOn && <div className="tv-on-overlay" />}
-      {!tvOn ? (
+      {tvOff && <div className="tv-off-overlay" />}
+      {showMessage ? (
+        <div className={`signup-typer${canClick ? '' : ' dim'}`} onClick={handleTyperClick}>
+          <div>{msgTyped[0]}</div>
+          <div>{msgTyped[1]}</div>
+          {canClick && <div style={{fontSize:'0.9rem',marginTop:'2.5em',opacity:0.7}}>(클릭하면 로그인 화면으로 이동)</div>}
+        </div>
+      ) : !tvOn && !tvOff ? (
         <form className="signup-form" onSubmit={handleSubmit} autoComplete="off">
           <div className="signup-row">
             <label className="signup-label" htmlFor="id">{typedLabels[0]}</label>
@@ -199,9 +332,10 @@ const SignUp = () => {
               <input className="signup-input" id="name" name="name" value={form.name} onChange={handleChange} onFocus={handleFocus} onBlur={handleBlur} required />
             </span>
           </div>
-          <button type="submit" className="signup-btn" onMouseEnter={()=>setHovered(true)} onMouseLeave={()=>setHovered(false)}>
+          <button type="submit" className="signup-btn" disabled={loading}>
             {typedLabels[3]}
           </button>
+          <div className="signup-message">{message}</div>
         </form>
       ) : null}
     </div>
