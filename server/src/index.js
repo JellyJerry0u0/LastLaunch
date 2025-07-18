@@ -36,6 +36,10 @@ app.get('/', (req, res) => {
 // const gameRoutes = require('./routes/games');
 // app.use('/api/games', gameRoutes);
 
+// User routes
+const userRoutes = require('./routes/user');
+app.use('/api/user', userRoutes);
+
 // Create HTTP server
 const server = http.createServer(app);
 
