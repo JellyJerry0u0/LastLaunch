@@ -77,6 +77,7 @@ const SignIn = () => {
         setMessage('로그인 성공!');
         setToken(data.token);
         localStorage.setItem('token', data.token); // 토큰 저장
+        navigate(`/lobby/${form.id}`);
       } else {
         setMessage(data.message || '로그인 실패');
       }

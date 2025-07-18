@@ -11,8 +11,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/lobby/:username" element={<LobbyPage />} />
-        <Route path="/waiting/:roomId/:username" element={<WaitingRoom />} />
+        <Route path="/lobby/:userId" element={<LobbyPage />} />
+        <Route path="/waiting/:roomId/:userId" element={<WaitingRoom />} />
         <Route path="/" element={<TitleScreen />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
