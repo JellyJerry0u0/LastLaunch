@@ -1,3 +1,4 @@
+
 import './App.css';
 import TitleScreen from './pages/TitleScreen';
 import SignIn from './pages/SignIn';
@@ -14,6 +15,7 @@ function App() {
       </Routes>
     </Router>
   );
+
 }
 
 export default App;

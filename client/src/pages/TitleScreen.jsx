@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import "./TitleScreen.css";
 
 const TITLE = "Last_Launch";
 const TYPING_SPEED = 100; // ms per character
 const GLITCH_DURATION = 1200; // ms
+
 const FADE_DURATION = 700; // ms
 const MENU_TYPING_SPEED = 60; // ms per character for menu
 
@@ -18,21 +20,26 @@ function getRandomGlitchText(length) {
   return text;
 }
 
+
 const menuItems = [
   { label: "Sign in", path: "/signin", key: "signin" },
   { label: "Sign up", path: "/signup", key: "signup" },
 ];
 
+
 const TitleScreen = () => {
   const [glitch, setGlitch] = useState(true);
   const [typed, setTyped] = useState("");
   const [glitchText, setGlitchText] = useState("");
+
   const [showMenu, setShowMenu] = useState(false);
   const [fade, setFade] = useState("");
   const [hovered, setHovered] = useState("");
   const [menuTyped, setMenuTyped] = useState(["", ""]);
   const [menuCursor, setMenuCursor] = useState(-1); // -1이면 커서 없음, 0/1이면 해당 메뉴에 커서
   const navigate = useNavigate();
+
+
 
   // 치지직 효과
   useEffect(() => {
@@ -51,7 +58,10 @@ const TitleScreen = () => {
     };
   }, [glitch]);
 
+
   // 타이틀 타이핑 효과
+
+  // 타이핑 효과
   useEffect(() => {
     if (glitch) return;
     if (typed.length === TITLE.length) return;
@@ -60,6 +70,7 @@ const TitleScreen = () => {
     }, TYPING_SPEED);
     return () => clearTimeout(timeout);
   }, [glitch, typed]);
+
 
   // 메뉴 타이핑 효과
   useEffect(() => {
@@ -147,4 +158,5 @@ const TitleScreen = () => {
   );
 };
 
-export default TitleScreen;
+
+export default TitleScreen; 

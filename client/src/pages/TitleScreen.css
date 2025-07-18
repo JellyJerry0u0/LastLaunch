@@ -8,6 +8,7 @@
   align-items: center;
   justify-content: center;
   z-index: 100;
+
   transition: opacity 0.7s;
   opacity: 1;
 }
@@ -18,6 +19,7 @@
 }
 .title-black-bg.fade-in {
   opacity: 1;
+
 }
 
 .title-center {
@@ -47,6 +49,7 @@
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
+
 }
 
 .title-menu-center {
@@ -86,4 +89,5 @@
   color: #fff;
   font-family: inherit;
   animation: blink 1s steps(1) infinite;
+
 } 
