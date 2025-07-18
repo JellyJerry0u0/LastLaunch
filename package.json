@@ -9,7 +9,7 @@
     "dev": "concurrently \"npm run server\" \"npm run client\""
   },
   "devDependencies": {
-    "concurrently": "^7.0.0"
+    "concurrently": "^9.2.0"
   },
   "repository": {
     "type": "git",
@@ -22,7 +22,7 @@
     "url": "https://github.com/JellyJerry0u0/LastLaunch/issues"
   },
   "homepage": "https://github.com/JellyJerry0u0/LastLaunch#readme",
-  "devDependencies": {
-    "concurrently": "^9.2.0"
+  "dependencies": {
+    "react-router-dom": "^7.7.0"
   }
 }
