@@ -1,0 +1,40 @@
+.title-black-bg {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.title-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.title-coding-font {
+  color: #fff;
+  font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', monospace;
+  font-size: 2.5rem;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 8px #fff, 0 0 2px #0ff;
+  transition: color 0.1s;
+  user-select: none;
+}
+
+.title-cursor {
+  color: #fff;
+  font-size: 2.5rem;
+  font-family: inherit;
+  margin-left: 0.1em;
+  animation: blink 1s steps(1) infinite;
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+} 
