@@ -1,0 +1,28 @@
+{
+  "name": "lastlaunch",
+  "version": "1.0.0",
+  "description": "to the moon",
+  "main": "index.js",
+  "scripts": {
+    "client": "npm run start --prefix client",
+    "server": "nodemon server/src/index.js",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JellyJerry0u0/LastLaunch.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JellyJerry0u0/LastLaunch/issues"
+  },
+  "homepage": "https://github.com/JellyJerry0u0/LastLaunch#readme",
+  "dependencies": {
+    "react-router-dom": "^7.7.0"
+  }
+}

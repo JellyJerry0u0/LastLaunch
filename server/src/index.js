@@ -15,6 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 
+
 // Database connection
 mongoose
   .connect(process.env.MONGODB_URI)
@@ -51,6 +52,10 @@ app.get('/rooms', async (req, res) => {
 // app.use('/api/auth', authRoutes);
 // const gameRoutes = require('./routes/games');
 // app.use('/api/games', gameRoutes);
+
+// User routes
+const userRoutes = require('./routes/user');
+app.use('/api/user', userRoutes);
 
 // Create HTTP server
 const server = http.createServer(app);
