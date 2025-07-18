@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 
-/*
+
 // Database connection
 mongoose
   .connect(process.env.MONGODB_URI, {
@@ -22,7 +22,7 @@ mongoose
   })
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.error('MongoDB connection error:', err));
-*/
+
 
 
 // Basic route
