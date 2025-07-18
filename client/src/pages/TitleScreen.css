@@ -8,18 +8,36 @@
   align-items: center;
   justify-content: center;
   z-index: 100;
-
-  transition: opacity 0.7s;
   opacity: 1;
 }
 
-.title-black-bg.fade-out {
-  opacity: 0;
-  pointer-events: none;
+.tv-off-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: 9999;
+  pointer-events: all;
+  animation: tv-off-anim 0.7s cubic-bezier(.4,2,.6,1) forwards;
 }
-.title-black-bg.fade-in {
-  opacity: 1;
 
+@keyframes tv-off-anim {
+  0% {
+    transform: scaleY(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  80% {
+    transform: scaleY(0.04);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleY(0);
+    opacity: 1;
+  }
 }
 
 .title-center {
