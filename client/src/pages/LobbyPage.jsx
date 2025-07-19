@@ -1,12 +1,68 @@
 import React, { useEffect, useState } from 'react';
 import socket from '../services/socket';
 import { useNavigate, useParams } from 'react-router-dom';
+import './LobbyPage.css';
+
+// 타이핑 효과 컴포넌트
+const TypingRoomItem = ({ room, isTyping, onJoin }) => {
+  const [typedTitle, setTypedTitle] = useState('');
+  const [typedPlayers, setTypedPlayers] = useState('');
+  
+  useEffect(() => {
+    if (isTyping) {
+      // 제목 타이핑
+      let titleIndex = 0;
+      const titleInterval = setInterval(() => {
+        if (titleIndex < room.title.length) {
+          setTypedTitle(room.title.slice(0, titleIndex + 1));
+          titleIndex++;
+        } else {
+          clearInterval(titleInterval);
+          // 인원 수 타이핑
+          let playersIndex = 0;
+          const playersText = `인원: ${room.currentUserNumber}/${room.maxUsers}`;
+          const playersInterval = setInterval(() => {
+            if (playersIndex < playersText.length) {
+              setTypedPlayers(playersText.slice(0, playersIndex + 1));
+              playersIndex++;
+            } else {
+              clearInterval(playersInterval);
+            }
+          }, 50);
+        }
+      }, 100);
+    } else {
+      setTypedTitle(room.title);
+      setTypedPlayers(`인원: ${room.currentUserNumber}/${room.maxUsers}`);
+    }
+  }, [room, isTyping]);
+
+  return (
+    <li className="room-item">
+      <div className="room-info">
+        <div className="room-title">{typedTitle}</div>
+        <div className="room-players">{typedPlayers}</div>
+      </div>
+      <button 
+        className="join-button" 
+        onClick={() => onJoin(room._id)}
+        style={{ opacity: isTyping ? 0.5 : 1 }}
+        disabled={isTyping}
+      >
+        join
+      </button>
+    </li>
+  );
+};
 
 const LobbyPage = () => {
   const params = useParams();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showExtract, setShowExtract] = useState(true);
+  const [extractProgress, setExtractProgress] = useState(0);
+  const [typingRooms, setTypingRooms] = useState(new Set());
   const navigate = useNavigate();
   const myId = params.userId;
 
@@ -48,17 +104,24 @@ const LobbyPage = () => {
   };
 
   useEffect(() => {
-    fetchRooms();
-    if (!socket.connected) socket.connect();
+    // 압축 해제 애니메이션 시작
+    let progress = 0;
+    const extractInterval = setInterval(() => {
+      progress += 2;
+      setExtractProgress(progress);
+      
+      if (progress >= 100) {
+        clearInterval(extractInterval);
+        // 압축 해제 완료 후 로비 표시
+        setTimeout(() => {
+          setShowExtract(false);
+          fetchRooms();
+          if (!socket.connected) socket.connect();
+        }, 500);
+      }
+    }, 60); // 3초 동안 100%까지
 
     // 소켓 이벤트 핸들러
-    const handleRoomCreated = (data) => {
-      setRooms(prevRooms => {
-        // 중복 방 추가 방지
-        if (prevRooms.some(room => room._id === data._id)) return prevRooms;
-        return [...prevRooms, data];
-      });
-    };
     const handleRoomUpdated = (data) => {
         setRooms(prevRooms => {
           // 이미 있으면 갱신, 없으면 추가
@@ -66,41 +129,75 @@ const LobbyPage = () => {
           if (exists) {
             return prevRooms.map(room => room._id === data._id ? data : room);
           } else {
+            // 새 방이 추가되면 타이핑 효과 시작
+            setTypingRooms(prev => new Set([...prev, data._id]));
+            setTimeout(() => {
+              setTypingRooms(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(data._id);
+                return newSet;
+              });
+            }, 2000);
             return [...prevRooms, data];
           }
         });
       };
     socket.on('roomUpdated', handleRoomUpdated);
 
-    // return () => {
-    //   socket.off('roomCreated', handleRoomCreated);
-    //   if (socket.connected) socket.disconnect();
-    // };
+    return () => {
+      clearInterval(extractInterval);
+      socket.off('roomUpdated', handleRoomUpdated);
+    };
   }, []);
 
-  if (loading) return <div>로딩 중...</div>;
-  if (error) return <div>에러: {error}</div>;
-
   return (
-    <div>
-      <h2>게임 로비 목록</h2>
-      {rooms.length === 0 ? (
-        <div>현재 생성된 방이 없습니다.</div>
-      ) : (
-        <ul>
-          {rooms.map((room) => (
-            <li key={room._id}>
-              <strong>{room.title}</strong> (인원: {room.currentUserNumber}/{room.maxUsers})
-              <button style={{ marginLeft: '1em' }} onClick={() => navigate(`/waiting/${room._id}/${myId}`)}>
-                입장
-              </button>
-            </li>
-          ))}
-        </ul>
+    <div className="lobby-container">
+      {showExtract && (
+        <div className="extract-overlay">
+          <div className="extract-text">Last-Launch.zip 압축 푸는 중...</div>
+          <div className="extract-progress">
+            <div 
+              className="extract-progress-bar" 
+              style={{ width: `${extractProgress}%` }}
+            ></div>
+          </div>
+          <div className="extract-percentage">{extractProgress}%</div>
+        </div>
       )}
-      <button onClick={makeRoom}>
-        방 만들기
-      </button>
+      
+      <h1 className="lobby-title">Last-Launch</h1>
+      
+      <div className="rooms-container">
+        {loading ? (
+          <div className="loading">로딩 중...</div>
+        ) : error ? (
+          <div className="error">에러: {error}</div>
+        ) : (
+          <>
+            {rooms.length === 0 ? (
+              <div className="no-rooms">현재 생성된 방이 없습니다.</div>
+            ) : (
+              <ul className="room-list">
+                {rooms.map((room) => (
+                  <TypingRoomItem
+                    key={room._id}
+                    room={room}
+                    isTyping={typingRooms.has(room._id)}
+                    onJoin={(roomId) => navigate(`/waiting/${roomId}/${myId}`)}
+                  />
+                ))}
+              </ul>
+            )}
+            <button 
+              className="create-room-button" 
+              onClick={makeRoom}
+              disabled={loading}
+            >
+              Create Room
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 };
