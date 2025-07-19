@@ -30,7 +30,7 @@ jobs:
 
           cd /home/ubuntu/LastLaunch/server
           npm ci
-          npm run start
+          pm2 restart last-launch-server
 
 
 
