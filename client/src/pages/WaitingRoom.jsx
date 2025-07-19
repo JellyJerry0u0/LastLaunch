@@ -11,6 +11,7 @@ const WaitingRoom = () => {
   const maxUsers = 4;
   //내일하자
   const [readyState, setReadyState] = useState({});
+  
 
   useEffect(() => {
     console.log("joinRoom in client roomId : ", roomId);
