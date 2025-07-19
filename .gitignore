@@ -5,6 +5,7 @@
 
 # 빌드 아티팩트
 /client/build/
+/client/dist/
 /server/dist/
 
 # 환경 변수 파일
