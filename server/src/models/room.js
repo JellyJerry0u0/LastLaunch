@@ -8,8 +8,18 @@ const roomSchema = new mongoose.Schema({
     trim: true,            // 앞뒤 공백 제거
   },
   currentUsers: [{
-    type: String,
-    // ref: 'User'
+    id: {
+      type: String,
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    },
+    isReady: {
+      type: Boolean,
+      default: false
+    }
   }],
   currentUserNumber: {
     type: Number,
@@ -40,12 +50,16 @@ roomSchema.index({ status: 1, currentUsers: 1 });
  * 예시: 인스턴스 메서드
  * 방 참가 처리 로직을 캡슐화
  */
-roomSchema.methods.join = function(userId) {
+roomSchema.methods.join = function(userId, userName) {
   if (this.currentUsers.length >= this.maxUsers) {
     throw new Error('방이 가득 찼습니다.');
   }
-  if (this.currentUsers.includes(userId)) return this;
-  this.currentUsers.push(userId);
+  if (this.currentUsers.some(user => user.id === userId)) return this;
+  this.currentUsers.push({
+    id: userId,
+    name: userName,
+    isReady: false
+  });
   return this.save();
 };
 

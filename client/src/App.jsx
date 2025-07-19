@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LobbyPage from './pages/LobbyPage';
 import WaitingRoom from './pages/WaitingRoom';
-
+import MainGame from './pages/MainGame';
 import './App.css';
 import TitleScreen from './pages/TitleScreen';
 import SignIn from './pages/SignIn';
@@ -16,6 +16,7 @@ function App() {
         <Route path="/" element={<TitleScreen />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/maingame" element={<MainGame />} />
       </Routes>
     </Router>
   );
