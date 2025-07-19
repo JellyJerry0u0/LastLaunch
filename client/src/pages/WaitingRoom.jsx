@@ -9,6 +9,8 @@ const WaitingRoom = () => {
   const navigate = useNavigate();
   const [participants, setParticipants] = useState([]);
   const maxUsers = 4;
+  //내일하자
+  const [readyState, setReadyState] = useState({});
 
   useEffect(() => {
     console.log("joinRoom in client roomId : ", roomId);
