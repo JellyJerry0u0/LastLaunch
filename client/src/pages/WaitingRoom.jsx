@@ -58,6 +58,11 @@ const WaitingRoom = () => {
         </ul>
       </div>
       {/* 방 정보, 참가자 목록, 게임 시작 버튼 등 추가 가능 */}
+      <button onClick={() => {
+        socket.emit('startGame', { roomId: roomId, userId: myId });
+      }}>
+        게임 준비
+      </button>
     </div>
   );
 };
