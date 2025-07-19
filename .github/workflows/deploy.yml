@@ -1,36 +1,18 @@
-name: Auto Deploy to KCLOUD VM
+name: Deploy
+
 on:
   push:
     branches: [ main ]
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
     - uses: actions/checkout@v3
-
-    - name: SSH and Deploy
-      uses: appleboy/ssh-action@v0.1.9
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_KEY }}
-        script: |
-          if [ -d "/home/ubuntu/LastLaunch" ]; then
-            cd /home/ubuntu/LastLaunch
-            git pull origin main
-          else
-            mkdir -p /home/ubuntu/LastLaunch
-            git clone https://github.com/LastLaunch/LastLaunch.git /home/ubuntu/LastLaunch
-          fi
-
-          cd /home/ubuntu/LastLaunch/client
-          npm ci
-          npm run build
-
-          cd /home/ubuntu/LastLaunch/server
-          npm ci
-          pm2 restart last-launch-server
-
-
+    - name: Deploy
+      run: |
+        cd /home/ubuntu/LastLaunch
+        git pull
+        chmod +x deploy.sh
+        ./deploy.sh
 
