@@ -21,14 +21,14 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          cd ~/LastLaunch
+          cd ~/home/ubuntu/LastLaunch
           git pull origin main
 
-          cd ~/LastLaunch/client
+          cd ~/home/ubuntu/LastLaunch/client
           npm ci
           npm run build
 
-          cd ~/LastLaunch/server
+          cd ~/home/ubuntu/LastLaunch/server
           npm ci
           npm run start
 
