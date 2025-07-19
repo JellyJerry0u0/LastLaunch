@@ -16,7 +16,7 @@ function App() {
         <Route path="/" element={<TitleScreen />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
-        <Route path="/maingame" element={<MainGame />} />
+        <Route path="/maingame/:roomId/:userId" element={<MainGame />} />
       </Routes>
     </Router>
   );

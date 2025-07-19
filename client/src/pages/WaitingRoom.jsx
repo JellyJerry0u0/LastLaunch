@@ -56,7 +56,7 @@ const WaitingRoom = () => {
 
     socket.on('startGameSuccess', (data) => {
       console.log('게임 시작됨: ', data);
-      navigate(`/maingame`);
+      navigate(`/maingame/${roomId}/${myId}`);
     });
 
     socket.on('startGameFail', (data) => {

@@ -15,7 +15,8 @@ app.use(cors());
 app.use(express.json());
 
 
-async function createDefaultUser() {
+async function createDefaultUserAndRoom() {
+  // 유저 생성
   for(let i = 1; i <= 5; i++) {
     const exists = await User.findOne({ id: i });
     if(!exists) {
@@ -25,6 +26,18 @@ async function createDefaultUser() {
         name: i + "번 유저"
       });
     }
+  }
+  // 디폴트 방 생성
+  const defaultRoom = await GameRoom.findOne({ title: '기본방' });
+  if (!defaultRoom) {
+    await GameRoom.create({
+      title: '기본방',
+      currentUsers: [],
+      currentUserNumber: 0,
+      maxUsers: 4,
+      status: 'LOBBY'
+    });
+    console.log('기본방이 생성되었습니다.');
   }
 }
 // Database connection
@@ -37,7 +50,7 @@ mongoose
       await mongoose.connection.dropDatabase();
       console.log('DB 전체가 초기화되었습니다.');
     }
-    await createDefaultUser();
+    await createDefaultUserAndRoom();
   })
   .catch((err) => console.error('MongoDB connection error:', err));
 
@@ -104,6 +117,10 @@ app.post('/api/makeRoom', async (req, res) => {
     res.status(500).json({ error: '방 생성에 실패했습니다.' });
   }
 });
+
+// --- 멀티플레이어 위치 관리용 메모리 ---
+const roomPlayers = {};
+
 io.on('connection', (socket) => {
   console.log('New WebSocket connection:', socket.id);
 
@@ -136,8 +153,8 @@ io.on('connection', (socket) => {
       socket.emit('joinRoomFail', { error: '방이 꽉 찼습니다.' });
       return;
     }
-    
-    // 새로운 구조로 유저 추가 (실제 이름 사용)
+    // --- 멀티플레이어 위치 관리용: joinRoom에서는 아무것도 하지 않음 ---
+    // --- 기존 코드 계속 ---
     room.currentUsers.push({
       id: userId,
       name: user.name, // User DB에서 가져온 실제 이름
@@ -202,17 +219,14 @@ io.on('connection', (socket) => {
       socket.emit('startGameFail', { error: '방을 찾을 수 없습니다.' });
       return;
     }
-    
     // 방장 권한 확인 (첫 번째 참가자가 방장)
     if(room.currentUsers.length === 0 || room.currentUsers[0].id !== userId) {
       socket.emit('startGameFail', { error: '방장만 게임을 시작할 수 있습니다.' });
       return;
     }
-    
     // 2번째부터 4번째 참가자(인덱스 1~3)가 모두 준비 상태인지 확인
     const nonHostParticipants = room.currentUsers.slice(1);
     const allReady = nonHostParticipants.every(participant => participant && participant.isReady);
-    
     if(room.currentUsers.length !== room.maxUsers) {
       socket.emit('startGameFail', { error: '참가자 수가 부족합니다.' });
       return;
@@ -221,19 +235,86 @@ io.on('connection', (socket) => {
       socket.emit('startGameFail', { error: '아직 준비하지 않은 참가자가 있습니다.' });
       return;
     }
-    
-    // 게임 시작 성공
-    console.log("게임 시작됨: ", roomId);
-    io.to(roomId).emit('startGameSuccess', { 
+    // 1. status를 PLAYING으로 변경
+    room.status = 'PLAYING';
+    await room.save();
+    // 2. roomPlayers에 네 구석의 고정 위치 할당
+    const GAME_WIDTH = 2000;
+    const GAME_HEIGHT = 3000;
+    const startPositions = [
+      { x: GAME_WIDTH/2-100, y: GAME_HEIGHT/2-100 },
+      { x: GAME_WIDTH/2+100, y: GAME_HEIGHT/2-100 },
+      { x: GAME_WIDTH/2+100, y: GAME_HEIGHT/2+100 },
+      { x: GAME_WIDTH/2-200, y: GAME_HEIGHT/2+100 }
+    ];
+    roomPlayers[roomId] = {};
+    room.currentUsers.forEach((user, idx) => {
+      const pos = startPositions[idx % startPositions.length];
+      roomPlayers[roomId][user.id] = { x: pos.x, y: pos.y, destX: pos.x, destY: pos.y };
+    });
+    console.log("roomPlayers[roomId] in server (startGame) : ", roomPlayers[roomId]);
+    console.log("roomPlayers in server (startGame) : ", roomPlayers);
+    // 3. 초기 위치 등 필요한 정보 startGameSuccess로 전달
+    io.to(roomId).emit('startGameSuccess', {
       message: '게임이 시작됩니다!',
-      roomId: roomId 
+      roomId,
+      initialPlayers: roomPlayers[roomId]
     });
   });
   // Handle disconnect
   socket.on('disconnect', () => {
     console.log('Socket disconnected:', socket.id);
   });
+
+  // 클라이언트에서 이동 명령을 받으면 목표 좌표 갱신
+  socket.on('move', ({ roomId, userId, x, y }) => {
+    console.log("move in server, roomId : ", roomId, "userId : ", userId, "x : ", x, "y : ", y);
+    if (roomPlayers[roomId] && roomPlayers[roomId][userId]) {
+      roomPlayers[roomId][userId].destX = x;
+      roomPlayers[roomId][userId].destY = y;
+    }
+  });
 });
+
+// 모든 방의 플레이어 위치를 주기적으로 broadcast (status가 PLAYING인 방만)
+setInterval(async () => {
+  try {
+    const playingRooms = await GameRoom.find({ status: 'PLAYING' });
+    for (const room of playingRooms) {
+      const roomId = room._id.toString();
+      if (roomPlayers[roomId]) {
+        // 위치 보간: x, y를 destX, destY로 이동
+        Object.values(roomPlayers[roomId]).forEach(p => {
+          const dx = p.destX - p.x;
+          const dy = p.destY - p.y;
+          const dist = Math.hypot(dx, dy);
+          const speed = 12; // 서버에서 이동 속도
+          if (dist > speed) {
+            p.x += (dx / dist) * speed;
+            p.y += (dy / dist) * speed;
+          } else {
+            p.x = p.destX;
+            p.y = p.destY;
+          }
+        });
+        io.to(roomId).emit('playersUpdate', { players: roomPlayers[roomId] });
+      }
+    }
+  } catch (err) {
+    console.error('PLAYING 방 위치 브로드캐스트 에러:', err);
+  }
+}, 60); // 약 16fps
+
+// roomPlayers의 초기 위치 정보를 반환하는 API
+app.get('/api/roomPlayers/:roomId', (req, res) => {
+  const { roomId } = req.params;
+  if (!roomPlayers[roomId]) {
+    return res.status(404).json({ error: '해당 방의 플레이어 정보가 없습니다.' });
+  }
+  console.log("roomPlayers[roomId] in server GET REQUEST: ", roomPlayers[roomId]);
+  res.json({ players: roomPlayers[roomId] });
+});
+
 // Start server
 
 const PORT = process.env.PORT || 4000;
