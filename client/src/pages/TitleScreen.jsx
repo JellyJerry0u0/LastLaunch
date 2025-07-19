@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAudio } from "../contexts/AudioContext";
 import "./TitleScreen.css";
 
 const TITLE = "Last_Launch";
@@ -34,6 +35,12 @@ const TitleScreen = () => {
   const [tvOff, setTvOff] = useState(false);
   const [pendingRoute, setPendingRoute] = useState(null);
   const navigate = useNavigate();
+  const { stopMusic } = useAudio();
+
+  // 페이지 진입 시 음악 정지
+  useEffect(() => {
+    stopMusic();
+  }, [stopMusic]);
 
   // 치지직 효과
   useEffect(() => {

@@ -1,6 +1,72 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import socket from '../services/socket';
+import { useAudio } from '../contexts/AudioContext';
+import './WaitingRoom.css';
+
+// 빈 참가자 자리용 Loading 애니메이션 컴포넌트
+const LoadingDots = () => {
+  const [dotCount, setDotCount] = useState(1);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDotCount((prev) => (prev % 3) + 1);
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+  return <span className="participant-name empty">Loading{'.'.repeat(dotCount)}</span>;
+};
+
+const GLITCH_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+-=~";
+
+// 참가자 이름 애니메이션 컴포넌트
+const TypingName = ({ name }) => {
+  const [phase, setPhase] = useState('glitch'); // glitch, typing, done
+  const [display, setDisplay] = useState('');
+  const glitchTimeout = useRef();
+  const typingTimeout = useRef();
+
+  useEffect(() => {
+    // glitch phase: 0.3초간 랜덤 문자
+    if (phase === 'glitch') {
+      let count = 0;
+      const glitchInterval = setInterval(() => {
+        setDisplay(Array(name.length).fill().map(() => GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)]).join(''));
+        count++;
+        if (count > 4) { // 약 0.3초
+          clearInterval(glitchInterval);
+          setPhase('typing');
+        }
+      }, 60);
+      return () => clearInterval(glitchInterval);
+    }
+    // typing phase: 한 글자씩 타이핑
+    if (phase === 'typing') {
+      let idx = 0;
+      function typeNext() {
+        setDisplay(name.slice(0, idx + 1));
+        if (idx < name.length - 1) {
+          typingTimeout.current = setTimeout(typeNext, 80);
+        } else {
+          setPhase('done');
+        }
+        idx++;
+      }
+      typeNext();
+      return () => clearTimeout(typingTimeout.current);
+    }
+    // done phase: 이름 전체 표시
+    if (phase === 'done') {
+      setDisplay(name);
+    }
+  }, [phase, name]);
+
+  useEffect(() => () => {
+    clearTimeout(glitchTimeout.current);
+    clearTimeout(typingTimeout.current);
+  }, []);
+
+  return <span className="participant-name">{display}</span>;
+};
 
 const WaitingRoom = () => {
   const params = useParams();
@@ -9,6 +75,7 @@ const WaitingRoom = () => {
   const navigate = useNavigate();
   const [participants, setParticipants] = useState([]);
   const maxUsers = 4;
+  const { isPlaying, hasStarted, playMusic } = useAudio();
   const firstFetch = async () => {
     try {
       const response = await fetch(import.meta.env.VITE_SERVER_URL + `/api/rooms/${roomId}`, {
@@ -33,6 +100,11 @@ const WaitingRoom = () => {
     firstFetch();
     console.log("joinRoom in client roomId : ", roomId);
     socket.emit('joinRoom', { roomId: roomId, userId: myId });
+    
+    // 음악이 시작되었지만 현재 재생 중이 아니라면 재생
+    if (hasStarted && !isPlaying) {
+      playMusic();
+    }
     
     socket.on('joinRoomSuccess', (data) => {
       console.log('누군가 방에 입장했다. : ', data);
@@ -83,82 +155,85 @@ const WaitingRoom = () => {
   };
 
   return (
-    <div>
-      <h2>대기방</h2>
-      <p>방 ID: {roomId}</p>
-      <button onClick={() => {
-        socket.emit('leaveRoom', { roomId: roomId, userId: myId });
-        navigate(`/lobby/${myId}`);
-      }}>
-        방 나가기
-      </button>
-      <p>유저 이름: {myId}</p>
-      <div style={{ marginTop: '2em' }}>
-        <h3>참가자 목록</h3>
-        <ul style={{ listStyle: 'none', padding: 0 }}>
-          {[...Array(maxUsers)].map((_, idx) => {
-            const participant = participants[idx];
-            const isHost = idx === 0;
-            return (
-              <li key={idx} style={{ border: '1px solid #ccc', margin: '0.5em 0', padding: '0.5em', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>
-                  {participant ? (
-                    <>
-                      {participant.name}
-                      {idx === 0 && <span style={{ marginLeft: 8 }}>👑</span>}
-                    </>
-                  ) : '비어있음'}
-                </span>
-                {participant && (
-                  <span style={{ 
-                    padding: '0.2em 0.5em', 
-                    borderRadius: '4px', 
-                    fontSize: '0.8em',
-                    backgroundColor: participant.isReady ? '#4CAF50' : '#FF9800',
-                    color: 'white'
-                  }}>
-                    {isHost ? '방장' : participant.isReady ? '준비' : '대기'}
-                  </span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-      
-      {/* 준비/시작 버튼 */}
-      <div style={{ marginTop: '2em' }}>
-        {myId === participants[0]?.id ? (
-          <button
-            style={{
-              padding: '1em 2em',
-              fontSize: '1.2em',
-              backgroundColor: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer'
-            }}
-            onClick={handleStartGame} // 추후 게임 시작 기능 연결
-          >
-            게임 시작
-          </button>
-        ) : (
-          <button 
-            onClick={handleToggleReady}
-            style={{
-              padding: '1em 2em',
-              fontSize: '1.2em',
-              backgroundColor: '#2196F3',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer'
-            }}
-          >
-            준비하기
-          </button>
-        )}
+    <div className="waiting-room-container">
+      <div className="cmd-window">
+        <div className="cmd-header">
+          <div className="cmd-title">Last-Launch Terminal</div>
+          <div className="cmd-controls">
+            <span className="cmd-control minimize">─</span>
+            <span className="cmd-control maximize">□</span>
+            <span className="cmd-control close">×</span>
+          </div>
+        </div>
+        <div className="cmd-content">
+          <div className="welcome-section">
+            <h1 className="welcome-title">Welcome, {myId} !</h1>
+          </div>
+          
+          <div className="action-buttons">
+            <button 
+              className="leave-button"
+              onClick={() => {
+                socket.emit('leaveRoom', { roomId: roomId, userId: myId });
+                navigate(`/lobby/${myId}`);
+              }}
+            >
+              Leave
+            </button>
+            
+            {myId === participants[0]?.id ? (
+              <button
+                className="start-game-button"
+                onClick={handleStartGame}
+              >
+                Start
+              </button>
+            ) : (
+              <button 
+                className="ready-button"
+                onClick={handleToggleReady}
+              >
+                Ready
+              </button>
+            )}
+          </div>
+          
+          <div className="participants-container">
+            <ul className="participants-list">
+              {[...Array(maxUsers)].map((_, idx) => {
+                const participant = participants[idx];
+                const isHost = idx === 0;
+                // 이름 타이핑 효과: 참가자가 처음 들어왔을 때만 TypingName 사용
+                const [prevName, setPrevName] = useState('');
+                useEffect(() => {
+                  if (participant && participant.name !== prevName) {
+                    setPrevName(participant.name);
+                  }
+                }, [participant]);
+                return (
+                  <li key={idx} className="participant-item">
+                    <div className="participant-info">
+                      {participant ? (
+                        <TypingName key={participant.name + idx} name={participant.name} />
+                      ) : (
+                        <LoadingDots key={'empty'+idx} />
+                      )}
+                      {participant && isHost && (
+                        <span className="master-badge">&gt;&gt;&gt;master</span>
+                      )}
+                      {participant && !isHost && participant.isReady && (
+                        <span className="ready-badge">&gt;&gt;&gt;ready</span>
+                      )}
+                      {participant && !isHost && !participant.isReady && (
+                        <span className="status-badge waiting">대기</span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   );

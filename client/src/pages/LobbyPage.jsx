@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import socket from '../services/socket';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAudio } from '../contexts/AudioContext';
+import AudioControl from '../components/AudioControl';
 import './LobbyPage.css';
 
 // 타이핑 효과 컴포넌트
 const TypingRoomItem = ({ room, isTyping, onJoin }) => {
   const [typedTitle, setTypedTitle] = useState('');
   const [typedPlayers, setTypedPlayers] = useState('');
+  const [fileSize] = useState(() => {
+    const size = Math.floor(Math.random() * 10) + 1; // 1~10 사이 랜덤
+    return `${size}MB`;
+  });
   
   useEffect(() => {
     if (isTyping) {
@@ -43,6 +49,7 @@ const TypingRoomItem = ({ room, isTyping, onJoin }) => {
         <div className="room-title">{typedTitle}</div>
         <div className="room-players">{typedPlayers}</div>
       </div>
+      <div className="room-file-size">{fileSize}</div>
       <button 
         className="join-button" 
         onClick={() => onJoin(room._id)}
@@ -65,6 +72,7 @@ const LobbyPage = () => {
   const [typingRooms, setTypingRooms] = useState(new Set());
   const navigate = useNavigate();
   const myId = params.userId;
+  const { playMusic } = useAudio();
 
   // 방 생성 요청
   const makeRoom = async () => {
@@ -117,6 +125,8 @@ const LobbyPage = () => {
           setShowExtract(false);
           fetchRooms();
           if (!socket.connected) socket.connect();
+          // 압축 해제 완료 후 배경음악 재생
+          playMusic();
         }, 500);
       }
     }, 60); // 3초 동안 100%까지
@@ -188,13 +198,15 @@ const LobbyPage = () => {
                 ))}
               </ul>
             )}
-            <button 
-              className="create-room-button" 
-              onClick={makeRoom}
-              disabled={loading}
-            >
-              Create Room
-            </button>
+            <div className="create-room-section">
+              <button 
+                className="create-room-button" 
+                onClick={makeRoom}
+                disabled={loading}
+              >
+                Create Room
+              </button>
+            </div>
           </>
         )}
       </div>
