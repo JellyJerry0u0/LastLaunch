@@ -6,19 +6,25 @@ import './App.css';
 import TitleScreen from './pages/TitleScreen';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
+import { AudioProvider } from './contexts/AudioContext';
+import AudioControl from './components/AudioControl';
 
 function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/lobby/:userId" element={<LobbyPage />} />
-        <Route path="/waiting/:roomId/:userId" element={<WaitingRoom />} />
-        <Route path="/" element={<TitleScreen />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/maingame/:roomId/:userId" element={<MainGame />} />
-      </Routes>
-    </Router>
+
+    <AudioProvider>
+      <Router>
+        <AudioControl />
+        <Routes>
+          <Route path="/lobby/:userId" element={<LobbyPage />} />
+          <Route path="/waiting/:roomId/:userId" element={<WaitingRoom />} />
+          <Route path="/" element={<TitleScreen />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path="/maingame/:roomId/:userId" element={<MainGame />} />
+        </Routes>
+      </Router>
+    </AudioProvider>
   );
 }
 export default App;

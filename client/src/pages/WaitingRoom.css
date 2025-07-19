@@ -1,0 +1,362 @@
+.waiting-room-container {
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fira Mono', Consolas, Menlo, Monaco, monospace;
+  position: relative;
+  overflow: hidden;
+}
+
+/* CMD 창 스타일 */
+.cmd-window {
+  width: 800px;
+  max-width: 90%;
+  height: 600px;
+  max-height: 80%;
+  background: #0a0a0a;
+  border: 2px solid #00ff41;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3), inset 0 0 20px rgba(0, 255, 65, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.cmd-window::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 49%, rgba(0, 255, 65, 0.1) 50%, transparent 51%);
+  background-size: 4px 4px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.cmd-header {
+  background: #1a1a1a;
+  border-bottom: 1px solid #00ff41;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #00ff41;
+  position: relative;
+  z-index: 2;
+}
+
+.cmd-title {
+  font-weight: bold;
+  text-shadow: 0 0 5px #00ff41;
+}
+
+.cmd-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.cmd-control {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s ease;
+}
+
+.cmd-control.minimize,
+.cmd-control.maximize,
+.cmd-control.close {
+  background: #00ff41;
+  color: #000;
+}
+
+.cmd-control:hover {
+  filter: brightness(1.2);
+  transform: scale(1.1);
+  background: #00ff41;
+  color: #000;
+}
+
+.cmd-content {
+  flex: 1;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  position: relative;
+  z-index: 2;
+}
+
+/* 스크롤바 스타일 */
+.cmd-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.cmd-content::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+.cmd-content::-webkit-scrollbar-thumb {
+  background: #00ff41;
+  border-radius: 4px;
+}
+
+.cmd-content::-webkit-scrollbar-thumb:hover {
+  background: #00cc33;
+}
+
+/* Welcome 섹션 */
+.welcome-section {
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.welcome-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #00ff41;
+  text-shadow: 0 0 10px #00ff41;
+  animation: welcome-glitch 0.1s infinite;
+  font-family: 'Courier New', 'Monaco', 'Menlo', 'Consolas', monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+@keyframes welcome-glitch {
+  0%, 90%, 100% {
+    text-shadow: 0 0 10px #00ff41;
+  }
+  10% {
+    text-shadow: 2px 0 10px #00ff41, -2px 0 10px #ff0000;
+  }
+  20% {
+    text-shadow: -2px 0 10px #00ff41, 2px 0 10px #ff0000;
+  }
+  30% {
+    text-shadow: 2px 0 10px #00ff41, -2px 0 10px #ff0000;
+  }
+  40% {
+    text-shadow: -2px 0 10px #00ff41, 2px 0 10px #ff0000;
+  }
+  50% {
+    text-shadow: 2px 0 10px #00ff41, -2px 0 10px #ff0000;
+  }
+  60% {
+    text-shadow: -2px 0 10px #00ff41, 2px 0 10px #ff0000;
+  }
+  70% {
+    text-shadow: 2px 0 10px #00ff41, -2px 0 10px #ff0000;
+  }
+  80% {
+    text-shadow: -2px 0 10px #00ff41, 2px 0 10px #ff0000;
+  }
+}
+
+/* 참가자 컨테이너 */
+.participants-container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.participants-title {
+  font-size: 1.5rem;
+  color: #00ff41;
+  margin-bottom: 2rem;
+  text-align: center;
+  text-shadow: 0 0 5px #00ff41;
+}
+
+.participants-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 60%;
+  max-width: 340px;
+}
+
+.participant-item {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+  box-shadow: none;
+  min-height: auto;
+  animation: participant-appear 1.5s ease-out forwards;
+}
+
+@keyframes participant-appear {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+    filter: blur(2px);
+  }
+  20% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+.participant-item:hover {
+  background: rgba(0, 255, 65, 0.1);
+  transform: translateX(5px);
+}
+
+.participant-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+}
+
+.participant-name {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #00ff41;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.participant-name.empty {
+  color: #00ff41;
+  opacity: 0.4;
+  font-style: italic;
+}
+
+.crown {
+  font-size: 1.2rem;
+  animation: crown-glow 2s ease-in-out infinite;
+}
+
+@keyframes crown-glow {
+  0%, 100% {
+    text-shadow: 0 0 5px #ffd700;
+  }
+  50% {
+    text-shadow: 0 0 15px #ffd700, 0 0 25px #ffd700;
+  }
+}
+
+.participant-status {
+  display: flex;
+  align-items: center;
+}
+
+.status-badge {
+  padding: 0.2em 0.8em;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+}
+
+.status-badge.host {
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  border: 1px solid #ffd700;
+}
+
+.status-badge.ready {
+  background: rgba(0, 255, 65, 0.2);
+  color: #00ff41;
+  border: 1px solid #00ff41;
+}
+
+.status-badge.waiting {
+  background: rgba(255, 152, 0, 0.2);
+  color: #ff9800;
+  border: 1px solid #ff9800;
+}
+
+.master-badge, .ready-badge {
+  color: #00ff41;
+  font-weight: bold;
+  font-family: 'Fira Mono', Consolas, Menlo, Monaco, monospace;
+  text-shadow: 0 0 8px #00ff41, 0 0 2px #0ff;
+  font-size: 0.95em;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  margin-left: auto;
+  margin-right: 0;
+  display: block;
+}
+
+/* 액션 버튼들 */
+.action-buttons {
+  display: flex;
+  gap: 2rem;
+  margin: 1rem 0 1.5rem 0;
+  justify-content: center;
+}
+
+.leave-button,
+.ready-button,
+.start-game-button {
+  background: transparent;
+  color: #00ff41;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+}
+
+.leave-button:hover,
+.ready-button:hover,
+.start-game-button:hover {
+  transform: translateX(5px);
+}
+
+.leave-button:hover::before,
+.ready-button:hover::before,
+.start-game-button:hover::before {
+  content: "> ";
+  position: absolute;
+  left: -15px;
+  color: #00ff41;
+} 
+
+.cmd-control,
+.leave-button,
+.ready-button,
+.start-game-button {
+  outline: none;
+} 

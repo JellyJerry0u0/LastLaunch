@@ -316,6 +316,14 @@
   margin-right: 1rem;
 }
 
+.room-file-size {
+  font-size: 0.8rem;
+  color: rgba(0, 255, 65, 0.7);
+  margin-right: 1rem;
+  font-style: italic;
+  opacity: 0.8;
+}
+
 .join-button {
   background: transparent;
   color: #00ff41;
@@ -343,6 +351,13 @@
   color: #00ff41;
 }
 
+.create-room-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 2rem;
+  width: 100%;
+}
+
 .create-room-button {
   background: transparent;
   color: #00ff41;
@@ -355,8 +370,6 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-top: 2rem;
-  margin-bottom: 2rem;
   align-self: center;
 }
 
@@ -377,7 +390,6 @@
   font-style: italic;
   margin: 2rem 0;
   font-size: 1.2rem;
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;

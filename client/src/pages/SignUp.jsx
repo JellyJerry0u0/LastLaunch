@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAudio } from "../contexts/AudioContext";
 
 const TYPING_SPEED = 70; // ms per character
 const TV_ON_DURATION = 700; // ms
@@ -43,6 +44,12 @@ const SignUp = () => {
   const [typedFileBoxText, setTypedFileBoxText] = useState('');
   const TYPING_SPEED_FILEBOX = 24; // ms per character
   const [fileBoxStep, setFileBoxStep] = useState(0); // 단계 상태 추가
+  const { stopMusic } = useAudio();
+
+  // 페이지 진입 시 음악 정지
+  useEffect(() => {
+    stopMusic();
+  }, [stopMusic]);
 
   // TV ON 애니메이션 후 폼 표시
   useEffect(() => {

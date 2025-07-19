@@ -1,0 +1,104 @@
+.audio-control {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000;
+  font-family: 'Fira Mono', 'Consolas', 'Menlo', 'Monaco', monospace;
+}
+
+.audio-btn {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #00ff41;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #00ff41;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.audio-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.audio-btn:hover::before {
+  left: 100%;
+}
+
+.audio-btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: #00ff41;
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.5), 0 0 30px rgba(0, 255, 65, 0.3);
+  transform: translateY(-2px);
+  text-shadow: 0 0 8px #00ff41;
+}
+
+.audio-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 0 5px rgba(0, 255, 65, 0.3);
+}
+
+.play-pause-btn {
+  border-color: #00ff41;
+  color: #00ff41;
+}
+
+.play-pause-btn:hover {
+  background: rgba(0, 255, 65, 0.1);
+}
+
+
+
+/* 버튼 내부 아이콘 스타일 */
+.audio-btn span {
+  font-size: 18px;
+  line-height: 1;
+  transition: all 0.2s ease;
+}
+
+/* 비활성화 상태 (음악이 재생되지 않을 때) */
+.audio-btn.disabled {
+  border-color: #666;
+  color: #666;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.audio-btn.disabled:hover {
+  background: rgba(0, 0, 0, 0.8);
+  border-color: #666;
+  box-shadow: none;
+  transform: none;
+  text-shadow: none;
+}
+
+/* 반짝이는 효과 */
+@keyframes audio-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(0, 255, 65, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(0, 255, 65, 0.6), 0 0 25px rgba(0, 255, 65, 0.4);
+  }
+}
+
+.audio-btn.playing {
+  animation: audio-glow 2s ease-in-out infinite;
+} 

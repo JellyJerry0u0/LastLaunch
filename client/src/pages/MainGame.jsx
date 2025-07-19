@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import socket from '../services/socket';
 import { useParams } from 'react-router-dom';
+import { useAudio } from '../contexts/AudioContext';
+
 
 // 맵 및 플레이어 설정
 const GAME_WIDTH = 2000;
@@ -10,12 +12,15 @@ const TILE_SIZE = 80;
 const PLAYER_SIZE = 40;
 
 const MyGame = () => {
+  const { stopMusic } = useAudio();
   const gameRef = useRef(null);
   const params = useParams();
   const roomId = params.roomId;
   const myId = params.userId;
   const [players, setPlayers] = useState(null); // { id: {x, y, destX, destY} }
-
+  useEffect(() => {
+    stopMusic();
+  }, [stopMusic]);
   // 1. players를 받아오는 useEffect
   useEffect(() => {
     const fetchInitialPlayers = async () => {
@@ -160,6 +165,7 @@ const MyGame = () => {
       game.destroy(true);
     };
   }, [players, roomId, myId]);
+
 
   return (
     <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
