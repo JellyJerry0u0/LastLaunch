@@ -4,6 +4,8 @@ import socket from '../services/socket';
 import { useParams } from 'react-router-dom';
 import { useAudio } from '../contexts/AudioContext';
 
+import GameMap from '../game/Map';
+import House from '../game/House';
 
 // 맵 및 플레이어 설정
 const GAME_WIDTH = 2000;
@@ -55,15 +57,20 @@ const MyGame = () => {
       }
       preload() {}
       create() {
+        this.map = new GameMap(this);
+        this.house = new House(this, 100, 100);
+        this.house2 = new House(this, 300, 100);
+        this.house3 = new House(this, 500, 100);
+        this.house4 = new House(this, 700, 100);
         // 배경
         const g = this.add.graphics();
-        for (let y = 0; y < GAME_HEIGHT; y += TILE_SIZE) {
-          for (let x = 0; x < GAME_WIDTH; x += TILE_SIZE) {
-            const isEven = ((x / TILE_SIZE) + (y / TILE_SIZE)) % 2 === 0;
-            g.fillStyle(isEven ? 0x333333 : 0x555555, 1);
-            g.fillRect(x, y, TILE_SIZE, TILE_SIZE);
-          }
-        }
+        // for (let y = 0; y < GAME_HEIGHT; y += TILE_SIZE) {
+        //   for (let x = 0; x < GAME_WIDTH; x += TILE_SIZE) {
+        //     const isEven = ((x / TILE_SIZE) + (y / TILE_SIZE)) % 2 === 0;
+        //     g.fillStyle(isEven ? 0x333333 : 0x555555, 1);
+        //     g.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        //   }
+        // }
         // 물리 바운드
         this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
         // 카메라
