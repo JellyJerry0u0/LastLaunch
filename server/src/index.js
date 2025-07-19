@@ -7,7 +7,7 @@ const cors = require('cors');
 const { Server } = require('socket.io');
 const GameRoom = require('./models/room');
 
-
+const User = require('./models/User');
 const app = express();
 
 // Middleware
@@ -15,7 +15,18 @@ app.use(cors());
 app.use(express.json());
 
 
-
+async function createDefaultUser() {
+  for(let i = 1; i <= 5; i++) {
+    const exists = await User.findOne({ id: i });
+    if(!exists) {
+      await User.create({
+        id: i,
+        pw: i,
+        name: i + "번 유저"
+      });
+    }
+  }
+}
 // Database connection
 mongoose
   .connect(process.env.MONGODB_URI)
@@ -26,6 +37,7 @@ mongoose
       await mongoose.connection.dropDatabase();
       console.log('DB 전체가 초기화되었습니다.');
     }
+    await createDefaultUser();
   })
   .catch((err) => console.error('MongoDB connection error:', err));
 
@@ -73,7 +85,7 @@ app.post('/api/makeRoom', async (req, res) => {
     const newRoom = new GameRoom(req.body);
     await newRoom.save();
     res.status(201).json(newRoom);
-    io.emit('roomCreated', newRoom);
+    io.emit('roomUpdated', newRoom);
     console.log("room in in (roomCreated) : ", newRoom._id);
   } catch (err) {
     console.log(err);
@@ -84,26 +96,52 @@ io.on('connection', (socket) => {
   console.log('New WebSocket connection:', socket.id);
 
   // Join room
-  socket.on('joinRoom', async ({ roomId, userName }) => {
+  socket.on('joinRoom', async ({ roomId, userId }) => {
     console.log("joinRoom in server");
     socket.join(roomId);
     console.log(`Socket ${socket.id} joined room ${roomId}`);
     const room = await GameRoom.findById(roomId);
     console.log("room id in server (joinRoom) : ", roomId);
     if(!room) {
-      socket.emit('roomJoinedFail', { error: '방을 찾을 수 없습니다.' });
+      socket.emit('joinRoomFail', { error: '방을 찾을 수 없습니다.' });
       return;
     }
     // currentUserNumber 증가 및 저장
-    room.currentUserNumber++;
+    if(room.currentUsers.includes(userId)) {
+      socket.emit('joinRoomFail', { error: '이미 방에 있습니다.' });
+      return;
+    }
+    if(room.currentUserNumber >= room.maxUsers) {
+      socket.emit('joinRoomFail', { error: '방이 꽉 찼습니다.' });
+      return;
+    }
+    room.currentUsers.push(userId);
+    room.currentUserNumber = room.currentUsers.length;
     await room.save();
-    // 모든 클라이언트에 방 정보 브로드캐스트
     io.emit('roomUpdated', room);
+    
+    console.log("room.currentUsers in server (joinRoom) : ", room.currentUsers);
+    socket.join(roomId);
+    io.to(roomId).emit('joinRoomSuccess', {currentUsers : room.currentUsers});
   });
-
-  // Broadcast messages
-  socket.on('message', (data) => {
-    io.to(data.roomId).emit('message', data);
+  socket.on('leaveRoom', async ({ roomId , userId}) => {
+    console.log("leaveRoom in server, roomId : ", roomId, "userId : ", userId);
+    const room = await GameRoom.findById(roomId);
+    if(!room) {
+      socket.emit('leaveRoomFail', { error: '방을 찾을 수 없습니다.' });
+      return;
+    }
+    if(!room.currentUsers.includes(userId)) {
+      socket.emit('leaveRoomFail', { error: '방에 있지 않습니다.' });
+      return;
+    }
+    console.log("room.currentUsers in server (leaveRoom) : ", room.currentUsers);
+    room.currentUsers = room.currentUsers.filter(id => id !== userId);
+    room.currentUserNumber = room.currentUsers.length;
+    await room.save();
+    io.emit('roomUpdated', room);
+    socket.leave(roomId);
+    io.to(roomId).emit('leaveRoomSuccess', {currentUsers : room.currentUsers});
   });
 
   // Handle disconnect

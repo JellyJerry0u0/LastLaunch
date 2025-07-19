@@ -8,8 +8,8 @@ const roomSchema = new mongoose.Schema({
     trim: true,            // 앞뒤 공백 제거
   },
   currentUsers: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    type: String,
+    // ref: 'User'
   }],
   currentUserNumber: {
     type: Number,

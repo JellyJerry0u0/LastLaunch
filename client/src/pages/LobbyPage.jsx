@@ -3,11 +3,12 @@ import socket from '../services/socket';
 import { useNavigate, useParams } from 'react-router-dom';
 
 const LobbyPage = () => {
+  const params = useParams();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const { username } = useParams();
+  const myId = params.userId;
 
   // 방 생성 요청
   const makeRoom = async () => {
@@ -59,12 +60,16 @@ const LobbyPage = () => {
       });
     };
     const handleRoomUpdated = (data) => {
-      console.log('방 정보가 업데이트되었다. : ', data);
-      setRooms(prevRooms => {
-        return prevRooms.map(room => room._id === data._id ? data : room);
-      });
-    };
-    socket.on('roomCreated', handleRoomCreated);
+        setRooms(prevRooms => {
+          // 이미 있으면 갱신, 없으면 추가
+          const exists = prevRooms.some(room => room._id === data._id);
+          if (exists) {
+            return prevRooms.map(room => room._id === data._id ? data : room);
+          } else {
+            return [...prevRooms, data];
+          }
+        });
+      };
     socket.on('roomUpdated', handleRoomUpdated);
 
     // return () => {
@@ -86,7 +91,7 @@ const LobbyPage = () => {
           {rooms.map((room) => (
             <li key={room._id}>
               <strong>{room.title}</strong> (인원: {room.currentUserNumber}/{room.maxUsers})
-              <button style={{ marginLeft: '1em' }} onClick={() => navigate(`/waiting/${room._id}/${username}`)}>
+              <button style={{ marginLeft: '1em' }} onClick={() => navigate(`/waiting/${room._id}/${myId}`)}>
                 입장
               </button>
             </li>
