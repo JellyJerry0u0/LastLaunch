@@ -1,7 +1,7 @@
 // client/src/game/Map.js
 
-const GAME_WIDTH = 2000;
-const GAME_HEIGHT = 3000;
+const GAME_WIDTH = 2500;
+const GAME_HEIGHT = 2500;
 const TILE_SIZE = 80;
 
 export default class GameMap {
