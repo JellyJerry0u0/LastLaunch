@@ -6,11 +6,13 @@ import { useAudio } from '../contexts/AudioContext';
 
 import GameMap from '../game/Map';
 import House from '../game/House';
+import Mine from '../game/Mine';
+import Farm from '../game/Farm';
+import Inventory from '../game/Inventory';
 
-// 맵 및 플레이어 설정
-const GAME_WIDTH = 2000;
-const GAME_HEIGHT = 3000;
-const TILE_SIZE = 80;
+import { GAME_WIDTH, GAME_HEIGHT, TILE_SIZE, HOUSE_SIZE, MINE_SIZE, HOUSE_COLOR, MINE_COLOR } from '../game/constants';
+
+
 const PLAYER_SIZE = 40;
 
 const MyGame = () => {
@@ -20,6 +22,7 @@ const MyGame = () => {
   const roomId = params.roomId;
   const myId = params.userId;
   const [players, setPlayers] = useState(null); // { id: {x, y, destX, destY} }
+  const [isPlayerLoaded, setIsPlayerLoaded] = useState(false);
   useEffect(() => {
     stopMusic();
   }, [stopMusic]);
@@ -31,6 +34,7 @@ const MyGame = () => {
         if (response.ok) {
           const data = await response.json();
           setPlayers(data.players);
+          setIsPlayerLoaded(true); // players 데이터를 받은 후에 true로 설정
         }
       } catch (err) {
         console.error('초기 위치 정보 불러오기 실패:', err);
@@ -39,10 +43,10 @@ const MyGame = () => {
     fetchInitialPlayers();
   }, [roomId]);
 
-  // 2. players가 준비된 후에 Phaser 게임 생성
+  // 2. players가 준비된 후에 Phaser 게임 생성 (한 번만)
   useEffect(() => {
-    console.log("players in client useEffect");
-    if (!players || !gameRef.current) return;
+    console.log("players in client useEffect, players:", players, "isPlayerLoaded:", isPlayerLoaded);
+    if (!players || !gameRef.current || !isPlayerLoaded) return;
     let game;
     let scene;
 
@@ -62,6 +66,23 @@ const MyGame = () => {
         this.house2 = new House(this, 300, 100);
         this.house3 = new House(this, 500, 100);
         this.house4 = new House(this, 700, 100);
+
+        this.mine = new Mine(this, GAME_WIDTH/2-MINE_SIZE/2, 0);
+        this.mine2 = new Mine(this, GAME_WIDTH/2-MINE_SIZE/2, GAME_HEIGHT-MINE_SIZE);
+        this.mine3 = new Mine(this, 0, GAME_HEIGHT/2-MINE_SIZE/2);
+        this.mine4 = new Mine(this, GAME_WIDTH-MINE_SIZE, GAME_HEIGHT/2-MINE_SIZE/2);
+        
+        console.log('광산 위치들:');
+        console.log('광산1 (상단):', GAME_WIDTH/2-MINE_SIZE/2, 0);
+        console.log('광산2 (하단):', GAME_WIDTH/2-MINE_SIZE/2, GAME_HEIGHT-MINE_SIZE);
+        console.log('광산3 (좌측):', 0, GAME_HEIGHT/2-MINE_SIZE/2);
+        console.log('광산4 (우측):', GAME_WIDTH-MINE_SIZE, GAME_HEIGHT/2-MINE_SIZE/2);
+
+        // 농장 생성 (3000, 0 위치, 크기 600)
+        this.farm = new Farm(this, 3000, 0, 600);
+        this.currentLocation = 'main'; // 'main' 또는 'farm'
+
+        this.inventory = new Inventory(this);
         // 배경
         const g = this.add.graphics();
         // for (let y = 0; y < GAME_HEIGHT; y += TILE_SIZE) {
@@ -71,17 +92,17 @@ const MyGame = () => {
         //     g.fillRect(x, y, TILE_SIZE, TILE_SIZE);
         //   }
         // }
-        // 물리 바운드
-        this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        // 물리 바운드 (농장까지 포함)
+        this.physics.world.setBounds(0, 0, 3500, GAME_HEIGHT);
         // 카메라
         const cam = this.cameras.main;
-        cam.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        cam.setBounds(0, 0, 3500, GAME_HEIGHT);
         this.scale.on('resize', () => {
-          cam.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
+          cam.setBounds(0, 0, 3500, GAME_HEIGHT);
         });
         // 입력
         this.input.on('pointerdown', (pointer) => {
-          const wx = Phaser.Math.Clamp(pointer.worldX, 0, GAME_WIDTH);
+          const wx = Phaser.Math.Clamp(pointer.worldX, 0, 3500);
           const wy = Phaser.Math.Clamp(pointer.worldY, 0, GAME_HEIGHT);
           if (this.playerSprites[myId]) {
             this.target = { x: wx, y: wy };
@@ -96,6 +117,16 @@ const MyGame = () => {
         socket.on('playersUpdate', ({ players }) => {
           console.log("playersUpdate in client, players : ", players);
           this.players = players;
+          // 플레이어 스프라이트 위치 업데이트
+          Object.entries(players).forEach(([id, p]) => {
+            if (this.playerSprites[id]) {
+              // 다른 플레이어들의 위치만 업데이트 (내 플레이어는 target으로 이동)
+              if (id !== myId) {
+                this.playerSprites[id].x = p.x;
+                this.playerSprites[id].y = p.y;
+              }
+            }
+          });
         });
         // 방 참가 요청
         socket.emit('joinRoom', { roomId, userId: myId });
@@ -128,6 +159,23 @@ const MyGame = () => {
               spr.x = this.target.x;
               spr.y = this.target.y;
             }
+
+            // 메인맵 → 농장 포탈
+            if (this.currentLocation === 'main') {
+              const inMine1 = this.mine.isPlayerInRange(spr.x, spr.y);
+              const inMine2 = this.mine2.isPlayerInRange(spr.x, spr.y);
+              const inMine3 = this.mine3.isPlayerInRange(spr.x, spr.y);
+              const inMine4 = this.mine4.isPlayerInRange(spr.x, spr.y);
+              if (inMine1 || inMine2 || inMine3 || inMine4) {
+                this.transitionToFarm();
+              }
+            }
+            // 농장 → 메인맵 포탈
+            else if (this.currentLocation === 'farm') {
+              if (this.farm.isPlayerInPortal(spr.x, spr.y)) {
+                this.transitionToMain();
+              }
+            }
           } else {
             const dx = p.x - spr.x;
             const dy = p.y - spr.y;
@@ -140,10 +188,62 @@ const MyGame = () => {
               spr.x = p.x;
               spr.y = p.y;
             }
-            // spr.x += (p.x - spr.x) * 1;
-            // spr.y += (p.y - spr.y) * 1;
           }
         });
+      }
+
+      transitionToFarm() {
+        console.log('농장으로 전환 시작!');
+        this.currentLocation = 'farm';
+        // 농장 활성화
+        this.farm.activate();
+        
+        // 플레이어를 농장으로 이동
+        const farmCenterX = this.farm.x + this.farm.size / 2;
+        const farmCenterY = this.farm.y + this.farm.size / 2;
+        
+        console.log('농장 중심 위치:', farmCenterX, farmCenterY);
+        
+        if (this.playerSprites[myId]) {
+          this.playerSprites[myId].x = farmCenterX;
+          this.playerSprites[myId].y = farmCenterY;
+          this.target = { x: farmCenterX, y: farmCenterY };
+          console.log('플레이어를 농장으로 이동 완료');
+        }
+        
+        // 인벤토리에 광물 추가
+        const emptySlot = this.inventory.findEmptySlot();
+        if (emptySlot !== -1) {
+          this.inventory.addItem(emptySlot, { name: '광물', color: 0x696969 });
+          console.log('광물을 인벤토리에 추가');
+        }
+        
+        // // 광산들 비활성화
+        // this.mine.deactivate();
+        // this.mine2.deactivate();
+        // this.mine3.deactivate();
+        // this.mine4.deactivate();
+        console.log('농장 전환 완료!');
+      }
+
+      transitionToMain() {
+        this.currentLocation = 'main';
+        // 플레이어를 메인맵 중앙(혹은 원하는 위치)으로 이동
+        const mainX = GAME_WIDTH / 2;
+        const mainY = GAME_HEIGHT / 2;
+        if (this.playerSprites[myId]) {
+          this.playerSprites[myId].x = mainX;
+          this.playerSprites[myId].y = mainY;
+          this.target = { x: mainX, y: mainY };
+        }
+        // 농장 비활성화
+        this.farm.deactivate();
+        // 필요시 광산들 다시 활성화
+        // this.mine.activate();
+        // this.mine2.activate();
+        // this.mine3.activate();
+        // this.mine4.activate();
+        console.log('메인 맵으로 복귀!');
       }
     }
 
@@ -169,9 +269,11 @@ const MyGame = () => {
       window.removeEventListener('resize', onResize);
       socket.off('playersUpdate');
       socket.off('joinRoom');
-      game.destroy(true);
+      if (game) {
+        game.destroy(true);
+      }
     };
-  }, [players, roomId, myId]);
+  }, [roomId, myId, isPlayerLoaded]); // players 의존성 제거
 
 
   return (
