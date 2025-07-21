@@ -12,6 +12,9 @@ export class SkillBar {
       this.x = x;
       this.y = y !== null ? y : this.scene.cameras.main.height - 150;
       this.createSkillBar();
+      // 모달 관련
+      this.skillTargetModal = null;
+      this.handleKeyInput();
     }
   
     createSkillBar() {
@@ -110,6 +113,76 @@ export class SkillBar {
           slot.skillIcon.setVisible(visible);
         }
       });
+    }
+
+    handleKeyInput() {
+      this.scene.input.keyboard.on('keydown-Q', () => {
+        this.showSkillTargetModal();
+      });
+    }
+
+    showSkillTargetModal() {
+      if (this.skillTargetModal) return; // 이미 열려있으면 중복 방지
+      // 임시 플레이어 목록 (실제론 외부에서 받아와야 함)
+      const playerList = [
+        { id: '1', name: 'Player 1' },
+        { id: '2', name: 'Player 2' },
+        { id: '3', name: 'Player 3' },
+        { id: '4', name: 'Player 4' },
+      ];
+      // 모달 배경
+      const modalWidth = 320;
+      const modalHeight = 260;
+      const centerX = this.scene.cameras.main.width / 2;
+      const centerY = this.scene.cameras.main.height / 2;
+      const bg = this.scene.add.rectangle(centerX, centerY, modalWidth, modalHeight, 0x222244, 0.95).setDepth(1000);
+      // 상단 문구
+      const title = this.scene.add.text(centerX, centerY - modalHeight/2 + 32, '스킬 적용대상', {
+        fontSize: '22px',
+        color: '#ffffff',
+        fontStyle: 'bold',
+        fontFamily: 'Arial',
+        stroke: '#000',
+        strokeThickness: 3
+      }).setOrigin(0.5).setDepth(1001);
+      // 플레이어 선택 버튼
+      const buttons = [];
+      playerList.forEach((player, idx) => {
+        const btnY = centerY - 30 + idx * 50;
+        const btn = this.scene.add.rectangle(centerX, btnY, 200, 40, 0x4444aa, 1).setDepth(1001).setInteractive({ useHandCursor: true });
+        const btnText = this.scene.add.text(centerX, btnY, player.name, {
+          fontSize: '18px',
+          color: '#ffffff',
+          fontFamily: 'Arial',
+          fontStyle: 'bold',
+          stroke: '#000',
+          strokeThickness: 2
+        }).setOrigin(0.5).setDepth(1002);
+        btn.on('pointerdown', () => {
+          this.onSkillTargetSelected(player);
+        });
+        buttons.push(btn, btnText);
+      });
+      // 닫기 버튼
+      const closeBtn = this.scene.add.text(centerX + modalWidth/2 - 32, centerY - modalHeight/2 + 16, 'X', {
+        fontSize: '20px', color: '#ff8888', fontFamily: 'Arial', fontStyle: 'bold', stroke: '#000', strokeThickness: 2
+      }).setOrigin(0.5).setDepth(1002).setInteractive({ useHandCursor: true });
+      closeBtn.on('pointerdown', () => this.closeSkillTargetModal());
+      // 모달 요소 저장
+      this.skillTargetModal = [bg, title, ...buttons, closeBtn];
+    }
+
+    closeSkillTargetModal() {
+      if (!this.skillTargetModal) return;
+      this.skillTargetModal.forEach(obj => obj.destroy());
+      this.skillTargetModal = null;
+    }
+
+    onSkillTargetSelected(player) {
+      // TODO: 실제 스킬 효과 적용 로직 (player.id)
+      this.closeSkillTargetModal();
+      // 예시: 콘솔 출력
+      console.log('Q스킬 대상 선택:', player);
     }
     
   } 
