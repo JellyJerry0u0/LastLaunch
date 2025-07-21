@@ -28,11 +28,6 @@ export default class FarmScene extends Phaser.Scene {
     
   }
 
-  spawnOre(){
-    const ore = new Ore(this, Math.random() * 1000, Math.random() * 1000);
-    this.ores.push(ore);
-  }
-
   init(data) {
     const tileSize = 80;
     const boardSize = 10;
@@ -57,7 +52,8 @@ export default class FarmScene extends Phaser.Scene {
     this.directionFrom = data.directionFrom;
     this.players = {}; // 서버로 부터 받아옴
     this.items = []; // 인벤토리 데이터 받기
-    
+    this.myInventory = [];
+    this.ores = [];
     this.initialPosition = INITIAL_POSITION[this.directionFrom];
     this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc);
     this.myPlayer = this.players[this.myId];
@@ -65,9 +61,6 @@ export default class FarmScene extends Phaser.Scene {
     this.input.keyboard.on('keyup-A', () => { this.aKeyDown = false; });
     this.input.keyboard.on('keydown-S', () => { this.sKeyDown = true; });
     this.input.keyboard.on('keyup-S', () => { this.sKeyDown = false; });
-
-    // === 광석 오브젝트 여러 개 생성 ===
-    this.ores = [];
   }
 
   create() {
@@ -129,7 +122,7 @@ export default class FarmScene extends Phaser.Scene {
     socket.emit('join_scene', { roomId: this.roomId, userId: this.myId, scene: 'FarmScene',position :this.initialPosition });
     // 인벤토리 생성 및 데이터 반영
     if (this.inventory) {
-      this.inventory.items = this.items;
+      this.inventory.items = this.myInventory;
       this.inventory.updateAllSlots();
     }
   }
