@@ -17,7 +17,7 @@ app.use(express.json());
 
 async function createDefaultUserAndRoom() {
   // 유저 생성
-  for(let i = 1; i <= 5; i++) {
+  for(let i = 1; i <= 8; i++) {
     const exists = await User.findOne({ id: i });
     if(!exists) {
       await User.create({
@@ -28,16 +28,27 @@ async function createDefaultUserAndRoom() {
     }
   }
   // 디폴트 방 생성
-  const defaultRoom = await GameRoom.findOne({ title: '기본방' });
+  const defaultRoom = await GameRoom.findOne({ title: '경리방' });
   if (!defaultRoom) {
     await GameRoom.create({
-      title: '기본방',
+      title: '경리방',
       currentUsers: [],
       currentUserNumber: 0,
       maxUsers: 4,
       status: 'LOBBY'
     });
-    console.log('기본방이 생성되었습니다.');
+    console.log('경리방이 생성되었습니다.');
+  }
+  const defaultRoomj = await GameRoom.findOne({ title: '재민방' });
+  if (!defaultRoomj) {
+    await GameRoom.create({
+      title: '재민방',
+      currentUsers: [],
+      currentUserNumber: 0,
+      maxUsers: 4,
+      status: 'LOBBY'
+    });
+    console.log('재민방이 생성되었습니다.');
   }
 }
 // Database connection
