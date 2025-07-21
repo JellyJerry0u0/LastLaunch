@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import Player from '../Player';
 import socket from '../../services/socket';
 import { INITIAL_POSITION } from '../constants';
-
+import Inventory from '../Inventory';
 
 export default class FarmScene extends Phaser.Scene {
   constructor() {
@@ -11,8 +11,12 @@ export default class FarmScene extends Phaser.Scene {
   }
   moveToMainMapScene(){
     socket.emit('leave_scene', { roomId: this.roomId, userId: this.myId, scene: 'FarmScene'});
-    //join_scene은 내부에 들어가서!!
-    this.scene.start('MainMapScene', {whoId: this.myId, roomId: this.roomId, directionFrom: 'FarmScene'});
+    this.scene.start('MainMapScene', {
+      whoId: this.myId,
+      roomId: this.roomId,
+      directionFrom: 'FarmScene',
+      inventory: this.inventory ? this.inventory.items : undefined // 인벤토리 데이터 전달
+    });
   }
 
   init(data) {
@@ -38,6 +42,7 @@ export default class FarmScene extends Phaser.Scene {
     this.roomId = data.roomId;
     this.directionFrom = data.directionFrom;
     this.players = {}; // 서버로 부터 받아옴
+    this.items = data.inventory || new Array(5).fill(null); // 인벤토리 데이터 받기
     
     this.initialPosition = INITIAL_POSITION[this.directionFrom];
     this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc);
@@ -72,6 +77,7 @@ export default class FarmScene extends Phaser.Scene {
           }
         });
       });
+    this.inventory = new Inventory(this); //인벤토리 생성
     // === 마우스 클릭 시 내 캐릭터 이동 ===
     this.input.on('pointerdown', (pointer) => {
       if (this.players[this.myId]) {
@@ -81,6 +87,11 @@ export default class FarmScene extends Phaser.Scene {
       }
     });
     socket.emit('join_scene', { roomId: this.roomId, userId: this.myId, scene: 'FarmScene',position :this.initialPosition });
+    // 인벤토리 생성 및 데이터 반영
+    if (this.inventory) {
+      this.inventory.items = this.items;
+      this.inventory.updateAllSlots();
+    }
   }
 
   update() {

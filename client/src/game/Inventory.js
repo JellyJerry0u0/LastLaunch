@@ -26,6 +26,7 @@ export default class Inventory {
       10
     );
     background.setScrollFactor(0, 0); // 카메라와 독립적으로 고정
+    console.log('Inventory create!');
 
     // 5개의 슬롯 생성
     for (let i = 0; i < 5; i++) {

@@ -17,6 +17,14 @@ export const INITIAL_POSITION = {
     "MainMapSceneToFarmScene": {
         "x": 200,
         "y": 100
+    },
+    "HouseScene": {
+        "x": 200,
+        "y": 100
+    },
+    "MainMapSceneToHouseScene": {
+        "x": 200,
+        "y": 100
     }
 }
 

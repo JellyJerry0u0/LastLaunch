@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import Player from '../Player';
 import socket from '../../services/socket';
 import { INITIAL_POSITION } from '../constants';
+import Inventory from '../Inventory';
 
 export default class MainMapScene extends Phaser.Scene {
   constructor() {
@@ -10,8 +11,21 @@ export default class MainMapScene extends Phaser.Scene {
   }
   moveToFarmScene(){
     socket.emit('leave_scene', { roomId: this.roomId, userId: this.myId, scene: 'MainMapScene'});
-    //join_scene은 내부에 들어가서!!
-    this.scene.start('FarmScene', {roomId: this.roomId, whoId: this.myId, directionFrom: 'MainMapSceneToFarmScene'});
+    this.scene.start('FarmScene', {
+      roomId: this.roomId,
+      whoId: this.myId,
+      directionFrom: 'MainMapSceneToFarmScene',
+      inventory: this.inventory ? this.inventory.items : undefined // 인벤토리 데이터 전달
+    });
+  }
+  moveToHouseScene(){
+    socket.emit('leave_scene', { roomId: this.roomId, userId: this.myId, scene: 'MainMapScene'});
+    this.scene.start('HouseScene', {
+      roomId: this.roomId,
+      whoId: this.myId,
+      directionFrom: 'MainMapSceneToHouseScene',
+      inventory: this.inventory ? this.inventory.items : undefined // 인벤토리 데이터 전달
+    });
   }
 
   init(data) {
@@ -32,6 +46,7 @@ export default class MainMapScene extends Phaser.Scene {
     this.roomId = data.roomId;
     this.directionFrom = data.directionFrom;
     this.players = {}; // 서버로 부터 받아옴
+    this.items = data.inventory || new Array(5).fill(null); // 인벤토리 데이터 받기
     
     this.initialPosition = INITIAL_POSITION[this.directionFrom];
     this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc);
@@ -46,6 +61,13 @@ export default class MainMapScene extends Phaser.Scene {
     portal.fillCircle(400, 400, 40);
     portal.lineStyle(3, 0xffffff, 1);
     portal.strokeCircle(400, 400, 40);
+    const houseportal = this.add.graphics();
+    houseportal.fillStyle(0x3399ff, 1);
+    houseportal.fillCircle(725, 75, 40);
+    houseportal.lineStyle(3, 0xffffff, 1);
+    houseportal.strokeCircle(725, 75, 40);
+
+    this.inventory = new Inventory(this); //인벤토리 생성
     // === 기존 플레이어 동기화 로직 ===
     socket.off('playersUpdate');
     socket.on('playersUpdate', ({ players }) => {
@@ -80,6 +102,11 @@ export default class MainMapScene extends Phaser.Scene {
     this.input.keyboard.on('keyup-A', () => { this.aKeyDown = false; });
     
     socket.emit('join_scene', { roomId: this.roomId, userId: this.myId, scene: 'MainMapScene',position :this.initialPosition });
+    // 인벤토리 생성 및 데이터 반영
+    if (this.inventory) {
+      this.inventory.items = this.items;
+      this.inventory.updateAllSlots();
+    }
   }
 
   update() {
@@ -88,6 +115,13 @@ export default class MainMapScene extends Phaser.Scene {
     if(Math.hypot(dx, dy) < 40 && this.aKeyDown) {
         this.moveToFarmScene();
     }
+
+    const hx = this.myPlayer.sprite.x - 725;
+    const hy = this.myPlayer.sprite.y - 75;
+    if(Math.hypot(hx, hy) < 40 && this.aKeyDown) {
+      this.moveToHouseScene();
+   }
+
     Object.values(this.players).forEach(player => player.update());
   }
 } 

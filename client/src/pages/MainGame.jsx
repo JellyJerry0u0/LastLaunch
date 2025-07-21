@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import MainMapScene from '../game/scenes/MainMapScene';
 import FarmScene from '../game/scenes/FarmScene';
+import HouseScene from '../game/scenes/HouseScene';
 import { useParams } from 'react-router-dom';
 
 const MyGame = () => {
@@ -18,7 +19,7 @@ const MyGame = () => {
       parent: gameRef.current,
       backgroundColor: '#222222',
       physics: { default: 'arcade', arcade: { debug: false } },
-      scene: [MainMapScene, FarmScene],
+      scene: [MainMapScene, FarmScene, HouseScene],
       scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
     };
     game = new Phaser.Game(config);
