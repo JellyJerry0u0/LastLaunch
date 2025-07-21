@@ -7,11 +7,12 @@ import { INITIAL_POSITION } from '../constants';
 export default class FarmScene extends Phaser.Scene {
   constructor() {
     super({ key: 'FarmScene' });
+    this.aKeyDown = false;
   }
   moveToMainMapScene(){
     socket.emit('leave_scene', { roomId: this.roomId, userId: this.myId, scene: 'FarmScene'});
     //join_scene은 내부에 들어가서!!
-    this.scene.switch('MainMapScene', {whoId: this.myId, roomId: this.roomId, directionFrom: 'FarmScene'});
+    this.scene.start('MainMapScene', {whoId: this.myId, roomId: this.roomId, directionFrom: 'FarmScene'});
   }
 
   init(data) {
@@ -27,8 +28,13 @@ export default class FarmScene extends Phaser.Scene {
         g.fillRect(x * tileSize, y * tileSize, tileSize, tileSize);
       }
     }
+    const portal = this.add.graphics();
+    portal.fillStyle(0x3399ff, 1);
+    portal.fillCircle(400, 400, 40);
+    portal.lineStyle(3, 0xffffff, 1);
+    portal.strokeCircle(400, 400, 40);
     this.myId = data.whoId;
-    console.log("myId in MainMapScene : ", this.myId);
+    console.log("myId in FarmScene : ", this.myId);
     this.roomId = data.roomId;
     this.directionFrom = data.directionFrom;
     this.players = {}; // 서버로 부터 받아옴
@@ -36,12 +42,15 @@ export default class FarmScene extends Phaser.Scene {
     this.initialPosition = INITIAL_POSITION[this.directionFrom];
     this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc);
     this.myPlayer = this.players[this.myId];
+    this.input.keyboard.on('keydown-A', () => { this.aKeyDown = true; });
+    this.input.keyboard.on('keyup-A', () => { this.aKeyDown = false; });
+    
   }
 
   create() {
     // === 체스판(체커보드) 배경 그리기 ===
     this.cameras.main.startFollow(this.players[this.myId].sprite);
-    
+    //여기서 기존의 플레이어들을 없애는 로직이 필요할수도?
     // === 기존 플레이어 동기화 로직 ===
     socket.off('playersUpdate');
     socket.on('playersUpdate', ({ players }) => {
@@ -77,8 +86,8 @@ export default class FarmScene extends Phaser.Scene {
   update() {
     const dx = this.myPlayer.sprite.x - 400;
     const dy = this.myPlayer.sprite.y - 400;
-    if(Math.hypot(dx, dy) < 40) {
-        this.moveToFarmScene();
+    if(Math.hypot(dx, dy) < 40 && this.aKeyDown) {
+        this.moveToMainMapScene();
     }
     Object.values(this.players).forEach(player => player.update());
   }

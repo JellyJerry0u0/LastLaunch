@@ -23,7 +23,7 @@ const MyGame = () => {
     };
     game = new Phaser.Game(config);
     // MainMapScene에 초기 데이터 전달
-    game.scene.start('MainMapScene', { whoId: myId, directionFrom: 'StartingPoint' });
+    game.scene.start('MainMapScene', { roomId: roomId, whoId: myId, directionFrom: 'StartingPoint' });
     const onResize = () => game.scale.resize(window.innerWidth, window.innerHeight);
     window.addEventListener('resize', onResize);
     return () => {

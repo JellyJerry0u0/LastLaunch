@@ -10,9 +10,13 @@ export const INITIAL_POSITION = {
         "x": 100,
         "y": 100
     },
-    "Farm": {
-        "x": MAIN_MAP_WIDTH / 2,
-        "y": MAIN_MAP_HEIGHT / 2
+    "FarmScene": {
+        "x": 200,
+        "y": 100
+    },
+    "MainMapSceneToFarmScene": {
+        "x": 200,
+        "y": 100
     }
 }
 
