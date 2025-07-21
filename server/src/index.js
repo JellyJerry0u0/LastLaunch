@@ -295,6 +295,24 @@ io.on('connection', (socket) => {
     roomPlayers[roomId][scene][userId] = { x: position.x, y: position.y, destX: position.x, destY: position.y};
     console.log("roomPlayers[roomId][scene][userId] in server (join_scene) : ", roomPlayers[roomId][scene][userId]);
   });
+  socket.on('itemPick', ({ roomId, scene, itemId }) => {
+    if (roomItems[roomId] && roomItems[roomId][scene]) {
+      const itemsArr = roomItems[roomId][scene];
+      const idx = itemsArr.findIndex(item => item.id === itemId);
+      if (idx !== -1) {
+        const pickedItem = itemsArr[idx];
+        itemsArr.splice(idx, 1); // 배열에서 제거
+        // 아이템 업데이트 브로드캐스트
+        io.to(roomId + "_" + scene).emit('itemsUpdate', itemsArr);
+        // 인벤토리 추가 이벤트(oreCollected와 동일하게)
+        io.to(socket.id).emit('oreCollected', {
+          type: pickedItem.type,
+          name: pickedItem.type,
+          imageKey: pickedItem.type
+        });
+      }
+    }
+  });
   socket.on('oreHit', ({ roomId, scene, oreId, damage }) => {
     if (
       roomOres[roomId] &&

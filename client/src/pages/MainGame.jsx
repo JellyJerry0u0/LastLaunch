@@ -20,7 +20,10 @@ const MyGame = () => {
       backgroundColor: '#222222',
       physics: { default: 'arcade', arcade: { debug: false } },
       scene: [MainMapScene, FarmScene, HouseScene],
-      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH }
+      scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
+      dom : {
+        createContainer: true
+      }
     };
     game = new Phaser.Game(config);
     // MainMapScene에 초기 데이터 전달

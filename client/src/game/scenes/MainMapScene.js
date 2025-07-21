@@ -16,7 +16,7 @@ export default class MainMapScene extends Phaser.Scene {
       roomId: this.roomId,
       whoId: this.myId,
       directionFrom: 'MainMapSceneToFarmScene',
-      inventory: this.inventory ? this.inventory.items : undefined // 인벤토리 데이터 전달
+      inventory: this.inventory ? [...this.inventory.items] : new Array(5).fill(null)
     });
   }
   moveToHouseScene(){
@@ -25,7 +25,7 @@ export default class MainMapScene extends Phaser.Scene {
       roomId: this.roomId,
       whoId: this.myId,
       directionFrom: 'MainMapSceneToHouseScene',
-      inventory: this.inventory ? this.inventory.items : undefined // 인벤토리 데이터 전달
+      inventory: this.inventory ? [...this.inventory.items] : new Array(5).fill(null)
     });
   }
 

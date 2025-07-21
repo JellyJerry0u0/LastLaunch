@@ -3,7 +3,7 @@ import Player from '../Player';
 import socket from '../../services/socket';
 import { INITIAL_POSITION } from '../constants';
 import Inventory from '../Inventory';
-
+import CraftingTable from '../CraftingTable';
 
 export default class HouseScene extends Phaser.Scene {
   constructor() {
@@ -38,6 +38,11 @@ export default class HouseScene extends Phaser.Scene {
     portal.fillCircle(400, 400, 40);
     portal.lineStyle(3, 0xffffff, 1);
     portal.strokeCircle(400, 400, 40);
+    const craftingTable = this.add.graphics();
+    craftingTable.fillStyle(0xffd700, 1); // 노란색
+    craftingTable.fillRect(685, 35, 80, 80);
+    craftingTable.lineStyle(3, 0xffffff, 1);
+    craftingTable.strokeRect(685, 35, 80, 80);  
     this.myId = data.whoId;
     console.log("myId in HouseScene : ", this.myId);
     this.roomId = data.roomId;
@@ -50,6 +55,9 @@ export default class HouseScene extends Phaser.Scene {
     this.myPlayer = this.players[this.myId];
     this.input.keyboard.on('keydown-A', () => { this.aKeyDown = true; });
     this.input.keyboard.on('keyup-A', () => { this.aKeyDown = false; });
+    this.input.keyboard.on('keydown-S', () => { this.sKeyDown = true; });
+    this.input.keyboard.on('keyup-S', () => { this.sKeyDown = false; });
+    
     
   }
 
@@ -58,6 +66,8 @@ export default class HouseScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.players[this.myId].sprite);
     //여기서 기존의 플레이어들을 없애는 로직이 필요할수도?
     this.inventory = new Inventory(this); //인벤토리 생성
+    this.craftingTable = new CraftingTable(this, this.cameras.main.centerX, this.cameras.main.centerY, this.inventory);
+    
     // === 기존 플레이어 동기화 로직 ===
     socket.off('playersUpdate');
     socket.on('playersUpdate', ({ players }) => {
@@ -100,6 +110,13 @@ export default class HouseScene extends Phaser.Scene {
     const dy = this.myPlayer.sprite.y - 400;
     if(Math.hypot(dx, dy) < 40 && this.aKeyDown) {
         this.moveToMainMapScene();
+    }
+    // 제작대 근처에서 S키를 누르면 팝업 표시
+    const tableX = 725, tableY = 75;
+    const dist = Phaser.Math.Distance.Between(this.myPlayer.sprite.x, this.myPlayer.sprite.y, tableX, tableY);
+    if (dist < 80 && this.sKeyDown) {
+      this.craftingTable.show();
+      this.sKeyDown = false;
     }
     Object.values(this.players).forEach(player => player.update());
   }

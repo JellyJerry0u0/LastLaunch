@@ -48,13 +48,17 @@ export default class Inventory {
 
   // 같은 name이 있으면 count만 증가, 없으면 새로 추가
   addItem(itemData) {
+    console.log('addItem 호출:', itemData);
+    console.log('현재 인벤토리:', this.items);
     const idx = this.items.findIndex(i => i && i.name === itemData.name);
+    console.log('중복 idx:', idx);
     if (idx !== -1) {
       this.items[idx].count += 1;
       this.updateSlot(idx);
       return true;
     }
     const emptyIdx = this.findEmptySlot();
+    console.log('빈 칸 idx:', emptyIdx);
     if (emptyIdx !== -1) {
       this.items[emptyIdx] = new InventoryItem(itemData);
       this.updateSlot(emptyIdx);
@@ -98,7 +102,48 @@ export default class Inventory {
         const img = this.scene.add.image(slotX + this.slotSize / 2, slotY + this.slotSize / 2, item.imageKey)
           .setDisplaySize(this.slotSize - 10, this.slotSize - 10)
           .setOrigin(0.5)
-          .setScrollFactor(0, 0);
+          .setScrollFactor(0, 0)
+          .setInteractive({ draggable: true });
+        // 드래그 시작
+        img.on('pointerdown', (pointer, localX, localY, event) => {
+          if (event) event.stopPropagation(); // 캐릭터 이동 방지
+          this.scene.input.setDraggable(img, true);
+          this.scene.draggedInventoryItem = { item, slotIdx: slotIndex, dragImage: img };
+        });
+        // 드래그 중
+        img.on('drag', (pointer, dragX, dragY) => {
+          img.x = dragX;
+          img.y = dragY;
+        });
+        // 드래그 종료
+        img.on('pointerup', (pointer, localX, localY, event) => {
+          if (event) event.stopPropagation();
+          // 팝업이 열려 있고, craftingTable/materialSlotBg가 있으면 드롭 판정
+          const craftingTable = this.scene.craftingTable;
+          if (craftingTable && craftingTable.container.visible) {
+            const slotBg = craftingTable.materialSlotBg;
+            // materialSlotBg는 Graphics이므로, 직접 좌표와 크기 지정 필요
+            // 팝업 컨테이너의 위치를 더해줘야 함
+            const containerX = craftingTable.container.x;
+            const containerY = craftingTable.container.y;
+            const slotX = containerX - 100; // materialSlotBg의 fillRect(-100, -40, 60, 60) 기준
+            const slotY = containerY - 40;
+            const slotWidth = 60;
+            const slotHeight = 60;
+            const px = this.scene.input.activePointer.worldX;
+            const py = this.scene.input.activePointer.worldY;
+            if (
+              px >= slotX && px <= slotX + slotWidth &&
+              py >= slotY && py <= slotY + slotHeight
+            ) {
+              craftingTable.setMaterial(item, slotIndex);
+            }
+          }
+          // 드래그 이미지 원위치
+          img.x = slotX + this.slotSize / 2;
+          img.y = slotY + this.slotSize / 2;
+          this.scene.draggedInventoryItem = null;
+        });
         this.slots[slotIndex].itemImage = img;
       }
       // 이름 표시 (아이콘 아래)

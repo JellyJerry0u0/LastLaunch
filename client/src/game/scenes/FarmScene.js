@@ -51,8 +51,8 @@ export default class FarmScene extends Phaser.Scene {
     this.roomId = data.roomId;
     this.directionFrom = data.directionFrom;
     this.players = {}; // 서버로 부터 받아옴
-    this.items = []; // 인벤토리 데이터 받기
-    this.myInventory = [];
+    this.items = []; 
+    this.myInventory = data.inventory || new Array(5).fill(null); // 인벤토리 데이터 받기
     this.ores = [];
     this.initialPosition = INITIAL_POSITION[this.directionFrom];
     this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc);
@@ -61,11 +61,6 @@ export default class FarmScene extends Phaser.Scene {
     this.input.keyboard.on('keyup-A', () => { this.aKeyDown = false; });
     this.input.keyboard.on('keydown-S', () => { this.sKeyDown = true; });
     this.input.keyboard.on('keyup-S', () => { this.sKeyDown = false; });
-  }
-
-  preload() {
-    this.load.image('iron', '/assets/iron.png');
-    // 필요시 다른 광물도 preload
   }
 
   preload() {
@@ -116,19 +111,23 @@ export default class FarmScene extends Phaser.Scene {
     socket.off('itemsUpdate');
     socket.on('itemsUpdate', (items) => {
       // 기존 아이템 오브젝트 제거
-      this.items.forEach(item => item.destroy());
+      this.items.forEach(item => {
+        if (item) item.destroy()});
       // 새로 생성
       this.items = items.map(item => new Item(this, item.id, item.x, item.y, item.type, item.amount));
+      socket.off('oreCollected');
+      socket.on('oreCollected', (data) => {
+        console.log('oreCollected 수신:', data);
+        this.inventory.addItem({
+          type: data.type,
+          name: data.name,
+          imageKey: data.imageKey
+        });
+      });
+
     });
     this.inventory = new Inventory(this); //인벤토리 생성
-    socket.off('oreCollected');
-    socket.on('oreCollected', (data) => {
-      this.inventory.addItem({
-        type: data.oreType,
-        name: data.oreType,
-        imageKey: data.oreType
-      });
-    });
+    
     // === 마우스 클릭 시 내 캐릭터 이동 ===
     this.input.on('pointerdown', (pointer) => {
       if (this.players[this.myId]) {
@@ -140,7 +139,7 @@ export default class FarmScene extends Phaser.Scene {
     socket.emit('join_scene', { roomId: this.roomId, userId: this.myId, scene: 'FarmScene',position :this.initialPosition });
     // 인벤토리 생성 및 데이터 반영
     if (this.inventory) {
-      this.inventory.items = this.items.map(item => item ? new InventoryItem(item) : null);
+      this.inventory.items = this.myInventory;
       this.inventory.updateAllSlots();
     }
   }
@@ -157,6 +156,13 @@ export default class FarmScene extends Phaser.Scene {
           socket.emit('oreHit', { roomId: this.roomId, scene: 'FarmScene', oreId: ore.id, damage: 1 });
         }
       });
+      this.items.forEach((item, idx) => {
+        if (!item) return;
+        const dist = Phaser.Math.Distance.Between(myX, myY, item.x, item.y);
+        if (dist < 20 + 20) {
+          //서버에 아이템 획득 요청
+          socket.emit('itemPick', { roomId: this.roomId, scene: 'FarmScene', itemId: item.id });
+        }})
       this.sKeyDown = false; // 한 번만 닳게 하려면
     }
     const dx = this.myPlayer.sprite.x - 400;
