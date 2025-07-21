@@ -2,8 +2,10 @@ import Phaser from 'phaser';
 import Player from '../Player';
 import socket from '../../services/socket';
 import { INITIAL_POSITION } from '../constants';
+import { MAIN_MAP_PORTAL_POSITION } from '../constants';
 import Inventory from '../Inventory';
 import { SkillBar } from '../SkillBar';
+import Portal from '../Portal';
 
 export default class MainMapScene extends Phaser.Scene {
   constructor() {
@@ -52,22 +54,36 @@ export default class MainMapScene extends Phaser.Scene {
     this.initialPosition = INITIAL_POSITION[this.directionFrom];
     this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc);
     this.myPlayer = this.players[this.myId];
+    // === 포탈 상태 요청 및 핸들러 등록 ===
+    socket.emit('requestPortalStatus', { roomId: this.roomId });
+    socket.off('portalStatus');
+    socket.on('portalStatus', ({ portals }) => {
+      if (this.FarmPortal) {
+        if (portals && portals.FarmPortal_1 === false) this.FarmPortal.setEnabled(false);
+        else this.FarmPortal.setEnabled(true);
+      }
+      if (this.HousePortal) {
+        if (portals && portals.HousePortal_1 === false) this.HousePortal.setEnabled(false);
+        else this.HousePortal.setEnabled(true);
+      }
+    });
   }
 
   create() {
     // === 체스판(체커보드) 배경 그리기 ===
     this.cameras.main.startFollow(this.players[this.myId].sprite);
-    const portal = this.add.graphics();
-    portal.fillStyle(0x3399ff, 1);
-    portal.fillCircle(400, 400, 40);
-    portal.lineStyle(3, 0xffffff, 1);
-    portal.strokeCircle(400, 400, 40);
-    const houseportal = this.add.graphics();
-    houseportal.fillStyle(0x3399ff, 1);
-    houseportal.fillCircle(725, 75, 40);
-    houseportal.lineStyle(3, 0xffffff, 1);
-    houseportal.strokeCircle(725, 75, 40);
 
+    //포탈 생성 및 초기화
+    this.FarmPortal = new Portal(this, "FarmPortal_1", MAIN_MAP_PORTAL_POSITION.FarmPortal.x, MAIN_MAP_PORTAL_POSITION.FarmPortal.y, 40, 'FarmScene');
+    this.HousePortal = new Portal(this, "HousePortal_1", MAIN_MAP_PORTAL_POSITION.HousePortal.x, MAIN_MAP_PORTAL_POSITION.HousePortal.y, 40, 'HouseScene');
+    // === 포탈 비활성화 실시간 동기화 핸들러 ===
+    socket.off('portalDisabled');
+    socket.on('portalDisabled', ({ portalId }) => {
+      if (portalId === 'FarmPortal_1' && this.FarmPortal) this.FarmPortal.setEnabled(false);
+      if (portalId === 'HousePortal_1' && this.HousePortal) this.HousePortal.setEnabled(false);
+    });
+    
+    //인벤토리 생성 및 스킬바 생성
     this.inventory = new Inventory(this); //인벤토리 생성
     this.skillBar = new SkillBar(this); //스킬바 생성
     // === 기존 플레이어 동기화 로직 ===
@@ -112,16 +128,16 @@ export default class MainMapScene extends Phaser.Scene {
   }
 
   update() {
-    const dx = this.myPlayer.sprite.x - 400;
-    const dy = this.myPlayer.sprite.y - 400;
+    const dx = this.myPlayer.sprite.x - MAIN_MAP_PORTAL_POSITION.FarmPortal.x;
+    const dy = this.myPlayer.sprite.y - MAIN_MAP_PORTAL_POSITION.FarmPortal.y;
     if(Math.hypot(dx, dy) < 40 && this.aKeyDown) {
-        this.moveToFarmScene();
+        this.FarmPortal.moveToTargetScene(this.myId);
     }
 
-    const hx = this.myPlayer.sprite.x - 725;
-    const hy = this.myPlayer.sprite.y - 75;
+    const hx = this.myPlayer.sprite.x - MAIN_MAP_PORTAL_POSITION.HousePortal.x;
+    const hy = this.myPlayer.sprite.y - MAIN_MAP_PORTAL_POSITION.HousePortal.y;
     if(Math.hypot(hx, hy) < 40 && this.aKeyDown) {
-      this.moveToHouseScene();
+      this.HousePortal.moveToTargetScene(this.myId);
    }
 
     Object.values(this.players).forEach(player => player.update());

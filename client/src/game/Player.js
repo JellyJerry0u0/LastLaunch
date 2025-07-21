@@ -6,6 +6,7 @@ export default class Player {
     scene.physics.add.existing(this.sprite);
     this.target = { x, y };
     this.speed = 6;
+    this.speedMultiplier = 1; // 기본값
     console.log("Player constructor : ", this.id, this.scene, this.sprite, this.target, this.speed);
   }
 
@@ -18,9 +19,10 @@ export default class Player {
     const dx = this.target.x - this.sprite.x;
     const dy = this.target.y - this.sprite.y;
     const dist = Math.hypot(dx, dy);
-    if (dist > this.speed) {
-      this.sprite.x += (dx / dist) * this.speed;
-      this.sprite.y += (dy / dist) * this.speed;
+    const moveSpeed = this.speed * (this.speedMultiplier || 1);
+    if (dist > moveSpeed) {
+      this.sprite.x += (dx / dist) * moveSpeed;
+      this.sprite.y += (dy / dist) * moveSpeed;
     } else {
       this.sprite.x = this.target.x;
       this.sprite.y = this.target.y;
