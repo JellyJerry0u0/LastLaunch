@@ -44,7 +44,7 @@ router.post('/login', async (req, res) => {
       'secret-key', // 실제 서비스에서는 환경변수 사용
       { expiresIn: '1h' }
     );
-    res.status(200).json({ success: true, token });
+    res.status(200).json({ success: true, token, name: user.name });
   } catch (err) {
     res.status(500).json({ success: false, message: '서버 오류', error: err.message });
   }

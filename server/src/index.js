@@ -138,6 +138,11 @@ const roomPortals = {};
 io.on('connection', (socket) => {
   console.log('New WebSocket connection:', socket.id);
 
+  // 전체 채팅 메시지 브로드캐스트
+  socket.on('chat', (msg) => {
+    io.emit('chat', msg);
+  });
+
   socket.on("disablePortal", ({ roomId, portalId, scene }) => {
     if(roomPortals[roomId] === undefined) {
       roomPortals[roomId] = {};
