@@ -3,6 +3,7 @@ import Player from '../Player';
 import socket from '../../services/socket';
 import { INITIAL_POSITION } from '../constants';
 import Inventory from '../Inventory';
+import { SkillBar } from '../SkillBar';
 
 export default class MainMapScene extends Phaser.Scene {
   constructor() {
@@ -68,6 +69,7 @@ export default class MainMapScene extends Phaser.Scene {
     houseportal.strokeCircle(725, 75, 40);
 
     this.inventory = new Inventory(this); //인벤토리 생성
+    this.skillBar = new SkillBar(this); //스킬바 생성
     // === 기존 플레이어 동기화 로직 ===
     socket.off('playersUpdate');
     socket.on('playersUpdate', ({ players }) => {
