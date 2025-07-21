@@ -13,6 +13,7 @@ export default class House {
     this.graphics.fillStyle(this.color, 1);
     this.graphics.fillRect(this.x, this.y, this.size, this.size);
   }
+<<<<<<< HEAD
 
   isPlayerInRange(px, py) {
     return (
@@ -21,3 +22,6 @@ export default class House {
     );
   }
 } 
+=======
+}
+>>>>>>> origin/main

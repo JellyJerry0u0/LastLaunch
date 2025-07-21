@@ -121,6 +121,8 @@ app.post('/api/makeRoom', async (req, res) => {
 // --- 멀티플레이어 위치 관리용 메모리 ---
 const roomPlayers = {};
 
+
+
 io.on('connection', (socket) => {
   console.log('New WebSocket connection:', socket.id);
 
@@ -239,27 +241,41 @@ io.on('connection', (socket) => {
     room.status = 'PLAYING';
     await room.save();
     // 2. roomPlayers에 네 구석의 고정 위치 할당
-    const GAME_WIDTH = 2000;
-    const GAME_HEIGHT = 3000;
-    const startPositions = [
-      { x: GAME_WIDTH/2-100, y: GAME_HEIGHT/2-100 },
-      { x: GAME_WIDTH/2+100, y: GAME_HEIGHT/2-100 },
-      { x: GAME_WIDTH/2+100, y: GAME_HEIGHT/2+100 },
-      { x: GAME_WIDTH/2-200, y: GAME_HEIGHT/2+100 }
-    ];
-    roomPlayers[roomId] = {};
-    room.currentUsers.forEach((user, idx) => {
-      const pos = startPositions[idx % startPositions.length];
-      roomPlayers[roomId][user.id] = { x: pos.x, y: pos.y, destX: pos.x, destY: pos.y };
-    });
-    console.log("roomPlayers[roomId] in server (startGame) : ", roomPlayers[roomId]);
-    console.log("roomPlayers in server (startGame) : ", roomPlayers);
+    
     // 3. 초기 위치 등 필요한 정보 startGameSuccess로 전달
     io.to(roomId).emit('startGameSuccess', {
       message: '게임이 시작됩니다!',
       roomId,
-      initialPlayers: roomPlayers[roomId]
     });
+  });
+  socket.on('join_scene', ({ roomId : roomId, userId : userId, scene : scene, position : position }) => {
+    if(roomPlayers[roomId] === undefined) {
+      roomPlayers[roomId] = {};
+    }
+    if(roomPlayers[roomId][scene] === undefined) {
+      roomPlayers[roomId][scene] = {};
+    }
+    socket.join(roomId + "_" + scene);
+    if(userId === undefined) {
+      console.log("userId is undefined in server (join_scene)");
+    }
+    roomPlayers[roomId][scene][userId] = { x: position.x, y: position.y, destX: position.x, destY: position.y};
+    console.log("roomPlayers[roomId][scene][userId] in server (join_scene) : ", roomPlayers[roomId][scene][userId]);
+  });
+  socket.on('leave_scene', ({ roomId, userId, scene }) => {
+    console.log("leave_scene in server, roomId : ", roomId, "userId : ", userId, "scene : ", scene);
+    if(roomPlayers[roomId] && roomPlayers[roomId][scene] && roomPlayers[roomId][scene][userId]) {
+      delete roomPlayers[roomId][scene][userId];
+      socket.leave(roomId + "_" + scene);
+    }
+  });
+
+  socket.on('move', ({ roomId, userId, scene, x, y }) => {
+    console.log("move in server, roomId : ", roomId, "userId : ", userId, "scene : ", scene, "x : ", x, "y : ", y);
+    if(roomPlayers[roomId] && roomPlayers[roomId][scene] && roomPlayers[roomId][scene][userId]) {
+      roomPlayers[roomId][scene][userId].destX = x;
+      roomPlayers[roomId][scene][userId].destY = y;
+    }
   });
   // Handle disconnect
   socket.on('disconnect', () => {
@@ -267,43 +283,44 @@ io.on('connection', (socket) => {
   });
 
   // 클라이언트에서 이동 명령을 받으면 목표 좌표 갱신
-  socket.on('move', ({ roomId, userId, x, y }) => {
-    console.log("move in server, roomId : ", roomId, "userId : ", userId, "x : ", x, "y : ", y);
-    if (roomPlayers[roomId] && roomPlayers[roomId][userId]) {
-      roomPlayers[roomId][userId].destX = x;
-      roomPlayers[roomId][userId].destY = y;
-    }
-  });
+
+
+  // 씬 이동 이벤트 처리
+
 });
 
 // 모든 방의 플레이어 위치를 주기적으로 broadcast (status가 PLAYING인 방만)
 setInterval(async () => {
   try {
-    const playingRooms = await GameRoom.find({ status: 'PLAYING' });
-    for (const room of playingRooms) {
-      const roomId = room._id.toString();
-      if (roomPlayers[roomId]) {
-        // 위치 보간: x, y를 destX, destY로 이동
-        Object.values(roomPlayers[roomId]).forEach(p => {
-          const dx = p.destX - p.x;
-          const dy = p.destY - p.y;
-          const dist = Math.hypot(dx, dy);
-          const speed = 12; // 서버에서 이동 속도
-          if (dist > speed) {
-            p.x += (dx / dist) * speed;
-            p.y += (dy / dist) * speed;
-          } else {
-            p.x = p.destX;
-            p.y = p.destY;
-          }
-        });
-        io.to(roomId).emit('playersUpdate', { players: roomPlayers[roomId] });
-      }
-    }
+    // roomPlayers = { roomId: { scene: { userId: { ... } } } }
+    Object.entries(roomPlayers).forEach(([roomId, scenesObj]) => {
+      Object.entries(scenesObj).forEach(([scene, usersObj]) => {
+        const userIds = Object.keys(usersObj);
+        if (userIds.length > 0) {
+          // 위치 보간
+          userIds.forEach(userId => {
+            const p = usersObj[userId];
+            const dx = p.destX - p.x;
+            const dy = p.destY - p.y;
+            const dist = Math.hypot(dx, dy);
+            const speed = 6;
+            if (dist > speed) {
+              p.x += (dx / dist) * speed;
+              p.y += (dy / dist) * speed;
+            } else {
+              p.x = p.destX;
+              p.y = p.destY;
+            }
+          });
+          // emit to roomId_scene
+          io.to(roomId + "_" + scene).emit('playersUpdate', { players: usersObj });
+        }
+      });
+    });
   } catch (err) {
     console.error('PLAYING 방 위치 브로드캐스트 에러:', err);
   }
-}, 60); // 약 16fps
+}, 60);
 
 // roomPlayers의 초기 위치 정보를 반환하는 API
 app.get('/api/roomPlayers/:roomId', (req, res) => {
