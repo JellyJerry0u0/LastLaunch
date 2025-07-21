@@ -307,6 +307,7 @@ io.on('connection', (socket) => {
           // 배열에서 제거
           const idx = oresArr.findIndex(o => o.id === oreId);
           if (idx !== -1) oresArr.splice(idx, 1);
+          io.to(socket.id).emit('oreCollected', { oreType : ore.type, oreName : ore.type, imageKey : ore.type });
         }
         // oresUpdate emit
         io.to(roomId + "_" + scene).emit('oresUpdate', oresArr);

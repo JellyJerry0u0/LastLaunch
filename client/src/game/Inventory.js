@@ -1,3 +1,5 @@
+import InventoryItem from './InventoryItem';
+
 export default class Inventory {
   constructor(scene, x = null, y = null) {
     this.scene = scene;
@@ -44,62 +46,82 @@ export default class Inventory {
     }
   }
 
-  // 특정 슬롯에 아이템 추가
-  addItem(slotIndex, item) {
-    if (slotIndex < 0 || slotIndex >= 5) return false;
-    if (this.items[slotIndex] !== null) return false; // 슬롯이 이미 차있음
-    
-    this.items[slotIndex] = item;
-    this.updateSlot(slotIndex);
-    return true;
+  // 같은 name이 있으면 count만 증가, 없으면 새로 추가
+  addItem(itemData) {
+    const idx = this.items.findIndex(i => i && i.name === itemData.name);
+    if (idx !== -1) {
+      this.items[idx].count += 1;
+      this.updateSlot(idx);
+      return true;
+    }
+    const emptyIdx = this.findEmptySlot();
+    if (emptyIdx !== -1) {
+      this.items[emptyIdx] = new InventoryItem(itemData);
+      this.updateSlot(emptyIdx);
+      return true;
+    }
+    return false;
   }
 
-  // 특정 슬롯에서 아이템 제거
   removeItem(slotIndex) {
     if (slotIndex < 0 || slotIndex >= 5) return null;
-    
     const item = this.items[slotIndex];
+    if (item && item.count > 1) {
+      item.count -= 1;
+      this.updateSlot(slotIndex);
+      return item;
+    }
     this.items[slotIndex] = null;
     this.updateSlot(slotIndex);
     return item;
   }
 
-  // 슬롯 업데이트 (아이템 표시)
   updateSlot(slotIndex) {
     const item = this.items[slotIndex];
     const slotX = this.x - ((this.slotSize * 5) + (this.slotSpacing * 4)) / 2 + (this.slotSize + this.slotSpacing) * slotIndex;
     const slotY = this.y - this.slotSize / 2;
-    
-    // 기존 아이템 그래픽과 텍스트 제거 (있다면)
     if (this.slots[slotIndex].itemGraphic) {
       this.slots[slotIndex].itemGraphic.destroy();
     }
     if (this.slots[slotIndex].itemText) {
       this.slots[slotIndex].itemText.destroy();
     }
-    
+    if (this.slots[slotIndex].itemImage) {
+      this.slots[slotIndex].itemImage.destroy();
+    }
+    if (this.slots[slotIndex].itemCountText) {
+      this.slots[slotIndex].itemCountText.destroy();
+    }
     if (item) {
-      // 아이템 표시 (예시: 색상으로 구분)
-      const itemGraphic = this.scene.add.graphics();
-      itemGraphic.fillStyle(item.color || 0x00ff00, 1);
-      itemGraphic.fillRoundedRect(slotX + 5, slotY + 5, this.slotSize - 10, this.slotSize - 10, 3);
-      itemGraphic.setScrollFactor(0, 0); // 카메라와 독립적으로 고정
-      
-      // 아이템 이름 표시 (옵션)
+      // 이미지 표시
+      if (item.imageKey) {
+        const img = this.scene.add.image(slotX + this.slotSize / 2, slotY + this.slotSize / 2, item.imageKey)
+          .setDisplaySize(this.slotSize - 10, this.slotSize - 10)
+          .setOrigin(0.5)
+          .setScrollFactor(0, 0);
+        this.slots[slotIndex].itemImage = img;
+      }
+      // 이름 표시 (아이콘 아래)
       if (item.name) {
-        const text = this.scene.add.text(slotX + this.slotSize / 2, slotY + this.slotSize / 2, item.name, {
+        const text = this.scene.add.text(slotX + this.slotSize / 2, slotY + this.slotSize - 8, item.name, {
           fontSize: '12px',
           color: '#ffffff'
         });
-        text.setOrigin(0.5);
-        text.setScrollFactor(0, 0); // 카메라와 독립적으로 고정
-        this.slots[slotIndex].itemText = text; // 텍스트를 별도로 저장
+        text.setOrigin(0.5, 1);
+        text.setScrollFactor(0, 0);
+        this.slots[slotIndex].itemText = text;
       }
-      
-      this.slots[slotIndex].itemGraphic = itemGraphic;
-    } else {
-      this.slots[slotIndex].itemGraphic = null;
-      this.slots[slotIndex].itemText = null;
+      // 개수 표시 (오른쪽 아래)
+      if (item.count > 1) {
+        const countText = this.scene.add.text(slotX + this.slotSize - 8, slotY + this.slotSize - 8, item.count.toString(), {
+          fontSize: '14px',
+          color: '#ffff00',
+          fontStyle: 'bold'
+        });
+        countText.setOrigin(1, 1);
+        countText.setScrollFactor(0, 0);
+        this.slots[slotIndex].itemCountText = countText;
+      }
     }
   }
 
