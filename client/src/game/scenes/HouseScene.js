@@ -28,7 +28,7 @@ export default class HouseScene extends Phaser.Scene {
     const exitButton = this.add.text(roomX + roomWidth - 100, roomY + roomHeight + 20, '나가기', { fontSize: '28px', fill: '#ff0', backgroundColor: '#333', padding: { x: 20, y: 10 } })
       .setInteractive({ useHandCursor: true })
       .on('pointerdown', () => {
-        this.scene.start('MainScene');
+        this.scene.switch('MainScene');
       });
   }
 } 
