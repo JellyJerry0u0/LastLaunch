@@ -71,7 +71,7 @@ app.get('/', (req, res) => {
   res.send('API is running');
 });
 
-app.get('/rooms', async (req, res) => {
+app.get('/api/rooms', async (req, res) => {
   try {
     console.log('방 목록 요청 받음');
     const rooms = await GameRoom.find();
