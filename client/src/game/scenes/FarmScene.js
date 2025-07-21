@@ -2,17 +2,23 @@ import Phaser from 'phaser';
 import Player from '../Player';
 import socket from '../../services/socket';
 import { INITIAL_POSITION } from '../constants';
-
+import Ore from '../Ore';
 
 export default class FarmScene extends Phaser.Scene {
   constructor() {
     super({ key: 'FarmScene' });
     this.aKeyDown = false;
+    this.sKeyDown = false;
   }
   moveToMainMapScene(){
     socket.emit('leave_scene', { roomId: this.roomId, userId: this.myId, scene: 'FarmScene'});
     //join_scene은 내부에 들어가서!!
     this.scene.start('MainMapScene', {whoId: this.myId, roomId: this.roomId, directionFrom: 'FarmScene'});
+  }
+
+  spawnOre(){
+    const ore = new Ore(this, Math.random() * 1000, Math.random() * 1000);
+    this.ores.push(ore);
   }
 
   init(data) {
@@ -44,7 +50,11 @@ export default class FarmScene extends Phaser.Scene {
     this.myPlayer = this.players[this.myId];
     this.input.keyboard.on('keydown-A', () => { this.aKeyDown = true; });
     this.input.keyboard.on('keyup-A', () => { this.aKeyDown = false; });
-    
+    this.input.keyboard.on('keydown-S', () => { this.sKeyDown = true; });
+    this.input.keyboard.on('keyup-S', () => { this.sKeyDown = false; });
+
+    // === 광석 오브젝트 여러 개 생성 ===
+    this.ores = [];
   }
 
   create() {
@@ -52,6 +62,21 @@ export default class FarmScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.players[this.myId].sprite);
     //여기서 기존의 플레이어들을 없애는 로직이 필요할수도?
     // === 기존 플레이어 동기화 로직 ===
+    socket.off('roomOresGet');
+    socket.on('roomOresGet', (ores) => {
+      console.log("roomOresGet in FarmScene, ores: ", ores);
+      // 기존 오브젝트 제거
+      this.ores.forEach(ore => ore.destroy());
+      // 새로 생성
+      this.ores = ores.map(ore => new Ore(this, ore.id, ore.x, ore.y, ore.hp, ore.type));
+    });
+    socket.off('oresUpdate');
+    socket.on('oresUpdate', (ores) => {
+      // 기존 오브젝트 제거
+      this.ores.forEach(ore => ore.destroy());
+      // 새로 생성
+      this.ores = ores.map(ore => new Ore(this, ore.id, ore.x, ore.y, ore.hp, ore.type));
+    });
     socket.off('playersUpdate');
     socket.on('playersUpdate', ({ players }) => {
         Object.entries(players).forEach(([id, player]) => {
@@ -84,6 +109,19 @@ export default class FarmScene extends Phaser.Scene {
   }
 
   update() {
+
+    if (this.sKeyDown) {
+      const myX = this.myPlayer.sprite.x;
+      const myY = this.myPlayer.sprite.y;
+      this.ores.forEach((ore, idx) => {
+        const dist = Phaser.Math.Distance.Between(myX, myY, ore.x, ore.y);
+        if (dist < ore.size + 20 && ore.hp > 0) { // 근처(광석 반지름+20) 이내
+          console.log("oreHit in FarmScene, oreId : ", ore.id);
+          socket.emit('oreHit', { roomId: this.roomId, scene: 'FarmScene', oreId: ore.id, damage: 1 });
+        }
+      });
+      this.sKeyDown = false; // 한 번만 닳게 하려면
+    }
     const dx = this.myPlayer.sprite.x - 400;
     const dy = this.myPlayer.sprite.y - 400;
     if(Math.hypot(dx, dy) < 40 && this.aKeyDown) {
