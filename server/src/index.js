@@ -131,7 +131,7 @@ app.post('/api/makeRoom', async (req, res) => {
 
 // --- 멀티플레이어 위치 관리용 메모리 ---
 const roomPlayers = {};
-
+const roomOres = {};
 
 
 io.on('connection', (socket) => {
@@ -181,7 +181,6 @@ io.on('connection', (socket) => {
     socket.join(roomId);
     io.to(roomId).emit('joinRoomSuccess', {currentUsers : room.currentUsers});
   });
-
   socket.on('leaveRoom', async ({ roomId , userId}) => {
     console.log("leaveRoom in server, roomId : ", roomId, "userId : ", userId);
     const room = await GameRoom.findById(roomId);
@@ -201,7 +200,6 @@ io.on('connection', (socket) => {
     socket.leave(roomId);
     io.to(roomId).emit('leaveRoomSuccess', {currentUsers : room.currentUsers});
   });
-
   // 준비 상태 토글
   socket.on('toggleReady', async ({ roomId, userId }) => {
     console.log("toggleReady in server, roomId : ", roomId, "userId : ", userId);
@@ -224,7 +222,6 @@ io.on('connection', (socket) => {
     console.log("준비 상태 변경: ", room.currentUsers[userIndex]);
     io.to(roomId).emit('readyStateChanged', { currentUsers: room.currentUsers });
   });
-
   socket.on('startGame', async ({ roomId, userId }) => {
     console.log("startGame in server, roomId : ", roomId, "userId : ", userId);
     const room = await GameRoom.findById(roomId);
@@ -266,12 +263,55 @@ io.on('connection', (socket) => {
     if(roomPlayers[roomId][scene] === undefined) {
       roomPlayers[roomId][scene] = {};
     }
+    if(roomOres[roomId] === undefined) {
+      roomOres[roomId] = {};
+    }
+    if(roomOres[roomId][scene] === undefined) {
+      // === FarmScene에 처음 진입하면 10개의 광석 생성 ===
+      if (scene === 'FarmScene') {
+        roomOres[roomId][scene] = [];
+        for (let i = 0; i < 10; i++) {
+          console.log("ore-${Date.now()}-${Math.random()} : ", `ore-${Date.now()}-${Math.random()}`);
+          roomOres[roomId][scene].push({
+            id: `ore-${Date.now()}-${Math.random()}`,
+            x: Math.floor(Math.random() * 900 + 100),
+            y: Math.floor(Math.random() * 500 + 100),
+            hp: 3,
+            type: 'iron'
+          });
+        }
+        socket.emit('roomOresGet', roomOres[roomId][scene]);
+      } else {
+        roomOres[roomId][scene] = [];
+      }
+    } else {
+      socket.emit('roomOresGet', roomOres[roomId][scene]);
+    }
     socket.join(roomId + "_" + scene);
     if(userId === undefined) {
       console.log("userId is undefined in server (join_scene)");
     }
     roomPlayers[roomId][scene][userId] = { x: position.x, y: position.y, destX: position.x, destY: position.y};
     console.log("roomPlayers[roomId][scene][userId] in server (join_scene) : ", roomPlayers[roomId][scene][userId]);
+  });
+  socket.on('oreHit', ({ roomId, scene, oreId, damage }) => {
+    if (
+      roomOres[roomId] &&
+      roomOres[roomId][scene]
+    ) {
+      const oresArr = roomOres[roomId][scene];
+      const ore = oresArr.find(o => o.id === oreId);
+      if (ore) {
+        ore.hp -= damage;
+        if (ore.hp <= 0) {
+          // 배열에서 제거
+          const idx = oresArr.findIndex(o => o.id === oreId);
+          if (idx !== -1) oresArr.splice(idx, 1);
+        }
+        // oresUpdate emit
+        io.to(roomId + "_" + scene).emit('oresUpdate', oresArr);
+      }
+    }
   });
   socket.on('leave_scene', ({ roomId, userId, scene }) => {
     console.log("leave_scene in server, roomId : ", roomId, "userId : ", userId, "scene : ", scene);
@@ -280,7 +320,6 @@ io.on('connection', (socket) => {
       socket.leave(roomId + "_" + scene);
     }
   });
-
   socket.on('move', ({ roomId, userId, scene, x, y }) => {
     console.log("move in server, roomId : ", roomId, "userId : ", userId, "scene : ", scene, "x : ", x, "y : ", y);
     if(roomPlayers[roomId] && roomPlayers[roomId][scene] && roomPlayers[roomId][scene][userId]) {
