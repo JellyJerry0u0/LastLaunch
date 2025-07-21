@@ -4,6 +4,7 @@ import socket from '../../services/socket';
 import { INITIAL_POSITION } from '../constants';
 import Ore from '../Ore';
 import Inventory from '../Inventory';
+import Item from '../Item';
 
 export default class FarmScene extends Phaser.Scene {
   constructor() {
@@ -55,7 +56,7 @@ export default class FarmScene extends Phaser.Scene {
     this.roomId = data.roomId;
     this.directionFrom = data.directionFrom;
     this.players = {}; // 서버로 부터 받아옴
-    this.items = data.inventory || new Array(5).fill(null); // 인벤토리 데이터 받기
+    this.items = []; // 인벤토리 데이터 받기
     
     this.initialPosition = INITIAL_POSITION[this.directionFrom];
     this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc);
@@ -109,6 +110,13 @@ export default class FarmScene extends Phaser.Scene {
           }
         });
       });
+    socket.off('itemsUpdate');
+    socket.on('itemsUpdate', (items) => {
+      // 기존 아이템 오브젝트 제거
+      this.items.forEach(item => item.destroy());
+      // 새로 생성
+      this.items = items.map(item => new Item(this, item.id, item.x, item.y, item.type, item.amount));
+    });
     this.inventory = new Inventory(this); //인벤토리 생성
     // === 마우스 클릭 시 내 캐릭터 이동 ===
     this.input.on('pointerdown', (pointer) => {

@@ -132,6 +132,7 @@ app.post('/api/makeRoom', async (req, res) => {
 // --- 멀티플레이어 위치 관리용 메모리 ---
 const roomPlayers = {};
 const roomOres = {};
+const roomItems = {};
 
 
 io.on('connection', (socket) => {
@@ -307,9 +308,34 @@ io.on('connection', (socket) => {
           // 배열에서 제거
           const idx = oresArr.findIndex(o => o.id === oreId);
           if (idx !== -1) oresArr.splice(idx, 1);
+          // === 아이템 생성 ===
+          if (!roomItems[roomId]) roomItems[roomId] = {};
+          if (!roomItems[roomId][scene]) roomItems[roomId][scene] = [];
+          roomItems[roomId][scene].push({
+            id: `item-${Date.now()}-${Math.random()}`,
+            x: ore.x,
+            y: ore.y,
+            type: ore.type,
+            amount: 1
+          });
+          io.to(roomId + "_" + scene).emit('itemsUpdate', roomItems[roomId][scene]);
         }
         // oresUpdate emit
         io.to(roomId + "_" + scene).emit('oresUpdate', oresArr);
+        if (oresArr.length === 0) {
+          setTimeout(() => {
+            for (let i = 0; i < 3; i++) {
+              oresArr.push({
+                id: `ore-${Date.now()}-${Math.random()}`,
+                x: Math.floor(Math.random() * 900 + 100),
+                y: Math.floor(Math.random() * 500 + 100),
+                hp: 3,
+                type: 'iron'
+              });
+            }
+            io.to(roomId + "_" + scene).emit('oresUpdate', oresArr);
+          }, 5000); // 5초 후 리젠 (원하는 시간으로 조정)
+        }
       }
     }
   });
