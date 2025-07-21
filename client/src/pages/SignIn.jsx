@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAudio } from "../contexts/AudioContext";
+import { useUser } from '../contexts/UserContext';
 
 const TYPING_SPEED = 70; // ms per character
 const TV_ON_DURATION = 700; // ms
@@ -20,6 +21,7 @@ const SignIn = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { stopMusic } = useAudio();
+  const { login } = useUser();
 
   // 페이지 진입 시 음악 정지
   useEffect(() => {
@@ -83,7 +85,9 @@ const SignIn = () => {
       if (res.ok && data.success) {
         setMessage('로그인 성공!');
         setToken(data.token);
-        localStorage.setItem('token', data.token); // 토큰 저장
+        if (data.name) {
+          login(form.id, data.name); // 전역 상태 갱신
+        }
         navigate(`/lobby/${form.id}`);
       } else {
         setMessage(data.message || '로그인 실패');
