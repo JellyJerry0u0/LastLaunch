@@ -36,3 +36,17 @@ export const MINE_SIZE = 200;
 export const HOUSE_COLOR = 0xffa500;
 export const MINE_COLOR = 0x888888;
 
+export const MAIN_MAP_PORTAL_POSITION = {
+    "FarmPortal": {
+        "x": 400,
+        "y": 400
+    },
+    "HousePortal": {
+        "x": 725,
+        "y": 75
+    }
+}
+
+// 포탈 아이디 목록 (관리 편의)
+export const PORTAL_IDS = ['FarmPortal_1', 'HousePortal_1'];
+

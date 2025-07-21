@@ -133,11 +133,23 @@ app.post('/api/makeRoom', async (req, res) => {
 const roomPlayers = {};
 const roomOres = {};
 const roomItems = {};
-
+const roomPortals = {};
 
 io.on('connection', (socket) => {
   console.log('New WebSocket connection:', socket.id);
 
+  socket.on("disablePortal", ({ roomId, portalId, scene }) => {
+    if(roomPortals[roomId] === undefined) {
+      roomPortals[roomId] = {};
+    }
+    if(roomPortals[roomId][scene] === undefined) {
+      roomPortals[roomId][scene] = {};
+    }
+    console.log("disablePortal in server, roomId : ", roomId, "portalId : ", portalId);
+    roomPortals[roomId][scene][portalId] = false;
+    io.to(roomId + "_" + scene).emit('portalStatus', { portals: roomPortals[roomId][scene] });
+  });
+  
   // Join room
   socket.on('joinRoom', async ({ roomId, userId }) => {
     console.log("joinRoom in server");
