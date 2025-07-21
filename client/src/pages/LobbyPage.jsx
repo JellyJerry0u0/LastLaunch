@@ -100,7 +100,7 @@ const LobbyPage = () => {
   const fetchRooms = async () => {
     try {
       setLoading(true);
-      const response = await fetch(import.meta.env.VITE_SERVER_URL + '/rooms');
+      const response = await fetch(import.meta.env.VITE_SERVER_URL + '/api/rooms');
       if (!response.ok) throw new Error('방 목록을 불러오지 못했습니다.');
       const data = await response.json();
       setRooms(data);
