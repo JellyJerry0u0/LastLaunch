@@ -3,15 +3,15 @@ import Player from '../Player';
 import socket from '../../services/socket';
 import { INITIAL_POSITION } from '../constants';
 
-
 export default class MainMapScene extends Phaser.Scene {
   constructor() {
     super({ key: 'MainMapScene' });
+    this.aKeyDown = false;
   }
   moveToFarmScene(){
     socket.emit('leave_scene', { roomId: this.roomId, userId: this.myId, scene: 'MainMapScene'});
     //join_scene은 내부에 들어가서!!
-    this.scene.switch('FarmScene', {whoId: this.myId, roomId: this.roomId, directionFrom: 'MainMapScene'});
+    this.scene.start('FarmScene', {roomId: this.roomId, whoId: this.myId, directionFrom: 'MainMapSceneToFarmScene'});
   }
 
   init(data) {
@@ -41,7 +41,11 @@ export default class MainMapScene extends Phaser.Scene {
   create() {
     // === 체스판(체커보드) 배경 그리기 ===
     this.cameras.main.startFollow(this.players[this.myId].sprite);
-    
+    const portal = this.add.graphics();
+    portal.fillStyle(0x3399ff, 1);
+    portal.fillCircle(400, 400, 40);
+    portal.lineStyle(3, 0xffffff, 1);
+    portal.strokeCircle(400, 400, 40);
     // === 기존 플레이어 동기화 로직 ===
     socket.off('playersUpdate');
     socket.on('playersUpdate', ({ players }) => {
@@ -71,13 +75,17 @@ export default class MainMapScene extends Phaser.Scene {
         socket.emit('move', { roomId: this.roomId, userId: this.myId, scene: 'MainMapScene', x: pointer.worldX, y: pointer.worldY });
       }
     });
+    // === a키 입력 상태 관리 ===
+    this.input.keyboard.on('keydown-A', () => { this.aKeyDown = true; });
+    this.input.keyboard.on('keyup-A', () => { this.aKeyDown = false; });
+    
     socket.emit('join_scene', { roomId: this.roomId, userId: this.myId, scene: 'MainMapScene',position :this.initialPosition });
   }
 
   update() {
     const dx = this.myPlayer.sprite.x - 400;
     const dy = this.myPlayer.sprite.y - 400;
-    if(Math.hypot(dx, dy) < 40) {
+    if(Math.hypot(dx, dy) < 40 && this.aKeyDown) {
         this.moveToFarmScene();
     }
     Object.values(this.players).forEach(player => player.update());
