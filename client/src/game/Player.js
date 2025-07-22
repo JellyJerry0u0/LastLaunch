@@ -37,10 +37,17 @@ export default class Player {
     // 방향에 따라 flipX만 조정, angle은 0으로 고정
     if (this.lastDirection === 'left') {
       glove.setFlipX(true);
+      glove.angle = 0;
     } else if (this.lastDirection === 'right') {
       glove.setFlipX(false);
-    } else {
+      glove.angle = 0;
+    } else if (this.lastDirection === 'up') {
       glove.setFlipX(false);
+      glove.angle = -90;
+    }
+     else if (this.lastDirection === 'down'){
+      glove.setFlipX(false);
+      glove.angle = 90;
     }
   
     // 0.2초 후 글러브 제거

@@ -2,6 +2,7 @@
 /node_modules/
 /server/node_modules/
 /client/node_modules/
+/client/src/services/socket.js
 
 # 빌드 아티팩트
 /client/build/
