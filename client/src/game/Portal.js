@@ -1,4 +1,5 @@
 import socket from '../services/socket';
+import { PORTAL_DEST_POSITION } from './constants';
 
 export default class Portal {
   constructor(scene, id, x, y, radius, targetScene) {
@@ -48,6 +49,22 @@ export default class Portal {
       whoId: playerId,
       directionFrom: this.scene.scene.key + 'To' + this.targetScene,
       inventory
+    });
+  }
+
+  // 같은 씬 내에서 플레이어 좌표만 이동
+  moveWithinScene() {
+    console.log("moveWithinScene in Portal, id : ", this.id);
+    if (!this.scene.myPlayer || !this.scene.myPlayer.sprite) return;
+    this.scene.myPlayer.sprite.x = PORTAL_DEST_POSITION[this.id].x;
+    this.scene.myPlayer.sprite.y = PORTAL_DEST_POSITION[this.id].y;
+    // 서버에 순간이동 이벤트 emit
+    socket.emit('teleport', {
+      roomId: this.scene.roomId,
+      userId: this.scene.myId,
+      scene: this.scene.scene.key,
+      x: PORTAL_DEST_POSITION[this.id].x,
+      y: PORTAL_DEST_POSITION[this.id].y
     });
   }
 

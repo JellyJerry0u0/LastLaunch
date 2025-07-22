@@ -390,6 +390,21 @@ io.on('connection', (socket) => {
       roomPlayers[roomId][scene][userId].destY = y;
     }
   });
+  socket.on('teleport', ({ roomId, userId, scene, x, y }) => {
+    if (
+      roomPlayers[roomId] &&
+      roomPlayers[roomId][scene] &&
+      roomPlayers[roomId][scene][userId]
+    ) {
+      // 즉시 위치를 바꾼다
+      roomPlayers[roomId][scene][userId].x = x;
+      roomPlayers[roomId][scene][userId].y = y;
+      roomPlayers[roomId][scene][userId].destX = x;
+      roomPlayers[roomId][scene][userId].destY = y;
+      // 즉시 동기화
+      io.to(roomId + "_" + scene).emit('playersUpdate', { players: roomPlayers[roomId][scene], isTeleport: true });
+    }
+  });
   // 글러브 스킬(밀어내기) 처리
   socket.on('gloveSkill', ({ roomId, scene, fromId, toId, direction }) => {
     if (

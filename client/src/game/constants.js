@@ -1,6 +1,5 @@
 export const GAME_WIDTH = 2500;
 export const GAME_HEIGHT = 2500;
-export const TILE_SIZE = 80;
 
 export const MAIN_MAP_WIDTH = 2500;
 export const MAIN_MAP_HEIGHT = 2500;
@@ -8,7 +7,7 @@ export const MAIN_MAP_HEIGHT = 2500;
 export const INITIAL_POSITION = {
     "StartingPoint": {
         "x": 100,
-        "y": 100
+        "y": 200
     },
     "MainMapSceneToFarmScene": {
         "x": 200,
@@ -32,6 +31,8 @@ export const INITIAL_POSITION = {
 export const HOUSE_SIZE = 120;
 export const MINE_SIZE = 200;
 
+export const TILE_SIZE = 32;
+
 // 색상 등 기타 상수
 export const HOUSE_COLOR = 0xffa500;
 export const MINE_COLOR = 0x888888;
@@ -44,7 +45,34 @@ export const MAIN_MAP_PORTAL_POSITION = {
     "HousePortal": {
         "x": 725,
         "y": 75
-    }
+    },
+    "3to2Portal": {
+        "x": 10 * TILE_SIZE + 16,
+        "y": 2 * TILE_SIZE + 16
+    },
+    "1to2Portal": {
+        "x": 1 * TILE_SIZE + 16,
+        "y": 14 * TILE_SIZE + 16
+    },
+    "2to1Portal": {
+        "x": 23 * TILE_SIZE + 16,
+        "y": 16 * TILE_SIZE + 16
+    },
+}
+
+export const PORTAL_DEST_POSITION = {
+    "3to2Portal": {
+        "x": 27 * TILE_SIZE + 16,
+        "y": 13 * TILE_SIZE + 16
+    },
+    "1to2Portal": {
+        "x": 1 * TILE_SIZE + 16,
+        "y": 5 * TILE_SIZE + 16
+    },
+    "2to1Portal": {
+        "x": 15 * TILE_SIZE + 16,
+        "y": 18 * TILE_SIZE + 16
+    },
 }
 export const HOUSE_PORTAL_POSITION = {
     "MainMapPortal": {

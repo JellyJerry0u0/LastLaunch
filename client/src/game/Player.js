@@ -5,11 +5,11 @@ export default class Player {
     this.id = id;
     this.scene = scene;
     this.sprite = scene.physics.add.sprite(x, y, 'player').setDepth(10);
-    this.sprite.setScale(2);
+    this.sprite;
     scene.physics.add.existing(this.sprite);
     this.sprite.body.setCollideWorldBounds(true);
     this.target = { x, y };
-    this.speed = 30;
+    this.speed = 10;
     this.speedMultiplier = 1; // 기본값
     this.lastDirection = 'down'; // 마지막 이동 방향
     // console.log("Player constructor : ", this.id, this.scene, this.sprite, this.target, this.speed);
