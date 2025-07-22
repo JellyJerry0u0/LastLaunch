@@ -53,7 +53,10 @@ export default class MainMapScene extends Phaser.Scene {
     this.items = data.inventory || new Array(5).fill(null); // 인벤토리 데이터 받기
     
     this.initialPosition = INITIAL_POSITION[this.directionFrom];
-    this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc);
+    this.character = data.character || { sprite: 'RACCOONSPRITESHEET.png', key: 'RACCOON' };
+    // 내 플레이어 생성 (내 id를 key로)
+    this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc, this.myId);
+    this.players[this.myId].sprite.setFrame(20); // idle 프레임 명확히 지정
     this.myPlayer = this.players[this.myId];
     // === 포탈 상태 요청 및 핸들러 등록 ===
     socket.emit('requestPortalStatus', { roomId: this.roomId });
@@ -68,6 +71,12 @@ export default class MainMapScene extends Phaser.Scene {
         else this.HousePortal.setEnabled(true);
       }
     });
+    this.currentUsers = data.currentUsers || [];
+    // 참가자별 캐릭터 정보 맵 생성
+    this.userCharacterMap = {};
+    for (const user of this.currentUsers) {
+      this.userCharacterMap[user.id] = user.character || 'RACCOONSPRITESHEET.png';
+    }
   }
 
   preload() {
@@ -78,36 +87,46 @@ export default class MainMapScene extends Phaser.Scene {
     this.load.image('wall', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Tileset Wall.png');
     this.load.image('object', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Props.png');
     this.load.image('water', '/assets/Water+-2.png');
-    this.load.spritesheet('player', '/assets/RACCOONSPRITESHEET.png', { frameWidth: 32, frameHeight: 32 });
+    // 캐릭터별 스프라이트시트 동적 preload
+    if (this.currentUsers) {
+      for (const user of this.currentUsers) {
+        this.load.spritesheet(user.id, `/assets/${user.character || 'RACCOONSPRITESHEET.png'}`, { frameWidth: 32, frameHeight: 32 });
+      }
+    }
     this.load.image('glove','/assets/Punch.png');    
     // this.load.spritesheet('raccoon_hurt', '/assets/raccoon_hurt.png', { frameWidth: 32, frameHeight: 32 });
     }
 
   create() {
-    this.anims.create({
-        key: 'walk-down',
-        frames: this.anims.generateFrameNumbers('player', { start: 20, end: 27 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'walk-left',
-        frames: this.anims.generateFrameNumbers('player', { start: 28, end: 35 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'walk-right',
-        frames: this.anims.generateFrameNumbers('player', { start: 36, end: 43 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'walk-up',
-        frames: this.anims.generateFrameNumbers('player', { start: 44, end: 51 }),
-        frameRate: 10,
-        repeat: -1
-    })
+    // 모든 참가자별로 애니메이션 생성
+    if (this.currentUsers) {
+      for (const user of this.currentUsers) {
+        this.anims.create({
+          key: `walk-down-${user.id}`,
+          frames: this.anims.generateFrameNumbers(user.id, { start: 20, end: 27 }),
+          frameRate: 10,
+          repeat: -1
+        });
+        this.anims.create({
+          key: `walk-left-${user.id}`,
+          frames: this.anims.generateFrameNumbers(user.id, { start: 28, end: 35 }),
+          frameRate: 10,
+          repeat: -1
+        });
+        this.anims.create({
+          key: `walk-right-${user.id}`,
+          frames: this.anims.generateFrameNumbers(user.id, { start: 36, end: 43 }),
+          frameRate: 10,
+          repeat: -1
+        });
+        this.anims.create({
+          key: `walk-up-${user.id}`,
+          frames: this.anims.generateFrameNumbers(user.id, { start: 44, end: 51 }),
+          frameRate: 10,
+          repeat: -1
+        });
+      }
+    }
 
     this.physics.world.setBounds(0, 0, 40*32, 40*32);
 
@@ -162,21 +181,20 @@ export default class MainMapScene extends Phaser.Scene {
     socket.on('playersUpdate', ({ players }) => {
       Object.entries(players).forEach(([id, player]) => {
         if (!id || id === "undefined") return;
+        // 방어 코드 제거: 텍스처 존재 여부 체크하지 않음
         if (!this.players[id]) {
-          this.players[id] = new Player(this, id, player.x, player.y, id === this.myId ? 0x00ffcc : 0xffcc00);
+          this.players[id] = new Player(this, id, player.x, player.y, id === this.myId ? 0x00ffcc : 0xffcc00, this.userCharacterMap[id]);
           this.physics.add.collider(this.players[id].sprite, this.propLayer);
           this.physics.add.collider(this.players[id].sprite, this.wall_layer_1);
           this.physics.add.collider(this.players[id].sprite, this.wall_layer_2);
         } else {
           const sprite = this.players[id].sprite;
           const dist = Math.hypot(sprite.x - player.x, sprite.y - player.y);
-          
-            // 평소에는 기존 방식대로 target만 갱신
-            if (id !== this.myId) {
-              this.players[id].target.x = player.destX;
-              this.players[id].target.y = player.destY;
-            }
-          
+          // 평소에는 기존 방식대로 target만 갱신
+          if (id !== this.myId) {
+            this.players[id].target.x = player.destX;
+            this.players[id].target.y = player.destY;
+          }
         }
       });
       Object.keys(this.players).forEach(id => {

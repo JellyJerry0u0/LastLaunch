@@ -19,6 +19,10 @@ const roomSchema = new mongoose.Schema({
     isReady: {
       type: Boolean,
       default: false
+    },
+    character: {
+      type: String,
+      default: 'RACCOONSPRITESHEET.png'
     }
   }],
   currentUserNumber: {

@@ -360,3 +360,51 @@
 .start-game-button {
   outline: none;
 } 
+
+.character-select-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.character-select-title {
+  color: #fff;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+}
+.character-list {
+  display: flex;
+  gap: 2rem;
+}
+.character-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  border: 3px solid transparent;
+  border-radius: 1rem;
+  padding: 1rem;
+  background: #222c;
+  transition: border 0.2s, background 0.2s;
+}
+.character-item.selected, .character-item:hover {
+  border: 3px solid #ffb300;
+  background: #333e;
+}
+.character-img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 0.5rem;
+}
+.character-label {
+  color: #fff;
+  font-size: 1.1rem;
+  margin-top: 0.2rem;
+  font-weight: 500;
+} 

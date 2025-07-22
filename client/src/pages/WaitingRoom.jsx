@@ -3,6 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import socket from '../services/socket';
 import { useAudio } from '../contexts/AudioContext';
 import './WaitingRoom.css';
+// import catImg from '../public/assets/CATSPRITESHEET.png';
+// import foxImg from '../public/assets/FOXSPRITESHEET.png';
+// import birdImg from '../public/assets/BIRDSPRITESHEET.png';
+// import raccoonImg from '../public/assets/RACCOONSPRITESHEET.png';
 
 // 빈 참가자 자리용 Loading 애니메이션 컴포넌트
 const LoadingDots = () => {
@@ -68,6 +72,13 @@ const TypingName = ({ name }) => {
   return <span className="participant-name">{display}</span>;
 };
 
+const CHARACTER_LIST = [
+  { key: 'RACCOON', label: '라쿤', img: '/assets/RACCOONSPRITESHEET.png', sprite: 'RACCOONSPRITESHEET.png' },
+  { key: 'CAT', label: '고양이', img: '/assets/CATSPRITESHEET.png', sprite: 'CATSPRITESHEET.png' },
+  { key: 'FOX', label: '여우', img: '/assets/FOXSPRITESHEET.png', sprite: 'FOXSPRITESHEET.png' },
+  { key: 'BIRD', label: '새', img: '/assets/BIRDSPRITESHEET.png', sprite: 'BIRDSPRITESHEET.png' },
+];
+
 const WaitingRoom = () => {
   const params = useParams();
   const roomId = params.roomId;
@@ -76,6 +87,7 @@ const WaitingRoom = () => {
   const [participants, setParticipants] = useState([]);
   const maxUsers = 4;
   const { isPlaying, hasStarted, playMusic } = useAudio();
+  const [selectedCharacter, setSelectedCharacter] = useState(CHARACTER_LIST[0]);
   const firstFetch = async () => {
     try {
       const response = await fetch(import.meta.env.VITE_SERVER_URL + `/api/rooms/${roomId}`, {
@@ -109,6 +121,11 @@ const WaitingRoom = () => {
     socket.on('joinRoomSuccess', (data) => {
       console.log('누군가 방에 입장했다. : ', data);
       setParticipants(data.currentUsers || []);
+      // 내 캐릭터 선택값 동기화
+      const me = (data.currentUsers || []).find(u => u.id === myId);
+      if (me && me.character) {
+        setSelectedCharacter(CHARACTER_LIST.find(c => c.sprite === me.character) || CHARACTER_LIST[0]);
+      }
     });
     
     socket.on('roomJoinedFail', (data) => {
@@ -126,9 +143,22 @@ const WaitingRoom = () => {
       setParticipants(data.currentUsers || []);
     });
 
+    socket.on('characterSelected', (data) => {
+      console.log('캐릭터 선택됨: ', data);
+      setParticipants(data.currentUsers || []);
+      // 내 캐릭터 선택값 동기화
+      const me = (data.currentUsers || []).find(u => u.id === myId);
+      if (me && me.character) {
+        setSelectedCharacter(CHARACTER_LIST.find(c => c.sprite === me.character) || CHARACTER_LIST[0]);
+      }
+    });
+
     socket.on('startGameSuccess', (data) => {
       console.log('게임 시작됨: ', data);
-      navigate(`/maingame/${roomId}/${myId}`);
+      // 내 캐릭터 정보 찾아서 MainGame으로 전달
+      const me = (data.currentUsers || []).find(u => u.id === myId);
+      const myCharacter = me && me.character ? (CHARACTER_LIST.find(c => c.sprite === me.character) || CHARACTER_LIST[0]) : selectedCharacter;
+      navigate(`/maingame/${roomId}/${myId}`, { state: { character: myCharacter, currentUsers: data.currentUsers } });
     });
 
     socket.on('startGameFail', (data) => {
@@ -141,10 +171,11 @@ const WaitingRoom = () => {
       socket.off('roomJoinedFail');
       socket.off('leaveRoomSuccess');
       socket.off('readyStateChanged');
+      socket.off('characterSelected');
       socket.off('startGameSuccess');
       socket.off('startGameFail');
     };
-  }, []);
+  }, [myId, roomId, hasStarted, isPlaying, navigate, selectedCharacter]);
 
   // 준비 상태 토글
   const handleToggleReady = () => {
@@ -153,9 +184,31 @@ const WaitingRoom = () => {
   const handleStartGame = () => {
     socket.emit('startGame', { roomId: roomId, userId: myId });
   };
+  // 캐릭터 선택 핸들러
+  const handleCharacterSelect = (character) => {
+    setSelectedCharacter(character);
+    socket.emit('selectCharacter', { roomId, userId: myId, character: character.sprite });
+  };
 
   return (
     <div className="waiting-room-container">
+      {/* 캐릭터 선택 UI (항상 노출) */}
+      <div className="character-select-modal" style={{ position: 'static', background: 'none', zIndex: 1 }}>
+        <div className="character-select-title">캐릭터를 선택하세요</div>
+        <div className="character-list">
+          {CHARACTER_LIST.map((char) => (
+            <div
+              key={char.key}
+              className={`character-item${selectedCharacter.key === char.key ? ' selected' : ''}`}
+              onClick={() => handleCharacterSelect(char)}
+            >
+              <img src={char.img} alt={char.label} className="character-img" />
+              <div className="character-label">{char.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* 기존 UI */}
       <div className="cmd-window">
         <div className="cmd-header">
           <div className="cmd-title">Last-Launch Terminal</div>

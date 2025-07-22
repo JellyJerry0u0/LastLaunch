@@ -255,24 +255,12 @@ io.on('connection', (socket) => {
     // 2번째부터 4번째 참가자(인덱스 1~3)가 모두 준비 상태인지 확인
     const nonHostParticipants = room.currentUsers.slice(1);
     const allReady = nonHostParticipants.every(participant => participant && participant.isReady);
-    if(room.currentUsers.length !== room.maxUsers) {
-      socket.emit('startGameFail', { error: '참가자 수가 부족합니다.' });
+    if (!allReady) {
+      socket.emit('startGameFail', { error: '모든 참가자가 준비되지 않았습니다.' });
       return;
     }
-    if(!allReady) {
-      socket.emit('startGameFail', { error: '아직 준비하지 않은 참가자가 있습니다.' });
-      return;
-    }
-    // 1. status를 PLAYING으로 변경
-    room.status = 'PLAYING';
-    await room.save();
-    // 2. roomPlayers에 네 구석의 고정 위치 할당
-    
-    // 3. 초기 위치 등 필요한 정보 startGameSuccess로 전달
-    io.to(roomId).emit('startGameSuccess', {
-      message: '게임이 시작됩니다!',
-      roomId,
-    });
+    // 게임 시작 신호 + 모든 참가자 캐릭터 정보 포함
+    io.to(roomId).emit('startGameSuccess', { currentUsers: room.currentUsers });
   });
   socket.on('join_scene', ({ roomId : roomId, userId : userId, scene : scene, position : position }) => {
     if(roomPlayers[roomId] === undefined) {
@@ -436,6 +424,17 @@ io.on('connection', (socket) => {
       roomPlayers[roomId][scene][id].destY = y;
       // 2. 넉백 해제 신호 전송 (특정 유저에게만)
       io.to(roomId + "_" + scene).emit('knockbackReleased', { id });
+    }
+  });
+  // 캐릭터 선택
+  socket.on('selectCharacter', async ({ roomId, userId, character }) => {
+    const room = await GameRoom.findById(roomId);
+    if (!room) return;
+    const user = room.currentUsers.find(u => u.id === userId);
+    if (user) {
+      user.character = character; // 예: 'CATSPRITESHEET.png'
+      await room.save();
+      io.to(roomId).emit('characterSelected', { userId, character, currentUsers: room.currentUsers });
     }
   });
   // Handle disconnect

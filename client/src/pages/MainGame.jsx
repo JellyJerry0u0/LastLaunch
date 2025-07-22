@@ -3,12 +3,16 @@ import Phaser from 'phaser';
 import MainMapScene from '../game/scenes/MainMapScene';
 import FarmScene from '../game/scenes/FarmScene';
 import HouseScene from '../game/scenes/HouseScene';
-import { useParams } from 'react-router-dom';
+// import LoadingScene from '../game/scenes/LoadingScene';
+import { useParams, useLocation } from 'react-router-dom';
 
 const MyGame = () => {
   const params = useParams();
+  const location = useLocation();
   const roomId = params.roomId;
   const myId = params.userId;
+  const character = location.state?.character;
+  const currentUsers = location.state?.currentUsers;
   const gameRef = useRef(null);
   useEffect(() => {
     let game;
@@ -26,15 +30,16 @@ const MyGame = () => {
       }
     };
     game = new Phaser.Game(config);
-    // MainMapScene에 초기 데이터 전달
-    game.scene.start('MainMapScene', { roomId: roomId, whoId: myId, directionFrom: 'StartingPoint' });
+    // MainMapScene에 초기 데이터 전달 (캐릭터 정보 포함)
+    game.scene.start('MainMapScene', { roomId: roomId, whoId: myId, directionFrom: 'StartingPoint', character, currentUsers });
+    // MainMapScene은 LoadingScene에서 start
     const onResize = () => game.scale.resize(window.innerWidth, window.innerHeight);
     window.addEventListener('resize', onResize);
     return () => {
       window.removeEventListener('resize', onResize);
       if (game) game.destroy(true);
     };
-  }, []);
+  }, [roomId, myId, character, currentUsers]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
