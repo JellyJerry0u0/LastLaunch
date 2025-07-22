@@ -72,6 +72,22 @@ const TypingName = ({ name }) => {
   return <span className="participant-name">{display}</span>;
 };
 
+// 스프라이트시트에서 1번 프레임만 잘라서 보여주는 컴포넌트
+const SpriteFrame = ({ src }) => {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const img = new window.Image();
+    img.src = src;
+    img.onload = () => {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, 32, 32);
+      // 1번 프레임: (32*1, 0, 32, 32)
+      ctx.drawImage(img, 32, 0, 32, 32, 0, 0, 64, 64); // 2배 확대
+    };
+  }, [src]);
+  return <canvas ref={canvasRef} width={64} height={64} style={{ imageRendering: 'pixelated', background: '#222', borderRadius: 8 }} />;
+};
+
 const CHARACTER_LIST = [
   { key: 'RACCOON', label: '라쿤', img: '/assets/RACCOONSPRITESHEET.png', sprite: 'RACCOONSPRITESHEET.png' },
   { key: 'CAT', label: '고양이', img: '/assets/CATSPRITESHEET.png', sprite: 'CATSPRITESHEET.png' },
@@ -88,6 +104,7 @@ const WaitingRoom = () => {
   const maxUsers = 4;
   const { isPlaying, hasStarted, playMusic } = useAudio();
   const [selectedCharacter, setSelectedCharacter] = useState(CHARACTER_LIST[0]);
+  const [showCharacterModal, setShowCharacterModal] = useState(true); // 처음 입장 시 한 번만
   const firstFetch = async () => {
     try {
       const response = await fetch(import.meta.env.VITE_SERVER_URL + `/api/rooms/${roomId}`, {
@@ -188,26 +205,29 @@ const WaitingRoom = () => {
   const handleCharacterSelect = (character) => {
     setSelectedCharacter(character);
     socket.emit('selectCharacter', { roomId, userId: myId, character: character.sprite });
+    setShowCharacterModal(false); // 한 번만
   };
 
   return (
     <div className="waiting-room-container">
-      {/* 캐릭터 선택 UI (항상 노출) */}
-      <div className="character-select-modal" style={{ position: 'static', background: 'none', zIndex: 1 }}>
-        <div className="character-select-title">캐릭터를 선택하세요</div>
-        <div className="character-list">
-          {CHARACTER_LIST.map((char) => (
-            <div
-              key={char.key}
-              className={`character-item${selectedCharacter.key === char.key ? ' selected' : ''}`}
-              onClick={() => handleCharacterSelect(char)}
-            >
-              <img src={char.img} alt={char.label} className="character-img" />
-              <div className="character-label">{char.label}</div>
-            </div>
-          ))}
+      {/* 캐릭터 선택 모달 */}
+      {showCharacterModal && (
+        <div className="character-select-modal">
+          <div className="character-select-title">Choose your Character</div>
+          <div className="character-list">
+            {CHARACTER_LIST.map((char) => (
+              <div
+                key={char.key}
+                className={`character-item${selectedCharacter.key === char.key ? ' selected' : ''}`}
+                onClick={() => handleCharacterSelect(char)}
+              >
+                <SpriteFrame src={char.img} />
+                <div className="character-label">{char.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       {/* 기존 UI */}
       <div className="cmd-window">
         <div className="cmd-header">
