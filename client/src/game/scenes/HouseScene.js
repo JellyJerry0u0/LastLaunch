@@ -4,6 +4,9 @@ import socket from '../../services/socket';
 import { INITIAL_POSITION } from '../constants';
 import Inventory from '../Inventory';
 import CraftingTable from '../CraftingTable';
+import Portal from '../Portal';
+import { HOUSE_PORTAL_POSITION } from '../constants';
+
 
 export default class HouseScene extends Phaser.Scene {
   constructor() {
@@ -58,6 +61,8 @@ export default class HouseScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-S', () => { this.sKeyDown = true; });
     this.input.keyboard.on('keyup-S', () => { this.sKeyDown = false; });
     
+    // 포탈 생성
+    this.MainMapPortal = new Portal(this, "MainMapPortal_1", HOUSE_PORTAL_POSITION.MainMapPortal.x, HOUSE_PORTAL_POSITION.MainMapPortal.y, 40, 'MainMapScene');
     
   }
 
@@ -109,7 +114,7 @@ export default class HouseScene extends Phaser.Scene {
     const dx = this.myPlayer.sprite.x - 400;
     const dy = this.myPlayer.sprite.y - 400;
     if(Math.hypot(dx, dy) < 40 && this.aKeyDown) {
-        this.moveToMainMapScene();
+        this.MainMapPortal.moveToTargetScene(this.myId);
     }
     // 제작대 근처에서 S키를 누르면 팝업 표시
     const tableX = 725, tableY = 75;

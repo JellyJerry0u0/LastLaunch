@@ -10,19 +10,19 @@ export const INITIAL_POSITION = {
         "x": 100,
         "y": 100
     },
-    "FarmScene": {
-        "x": 200,
-        "y": 100
-    },
     "MainMapSceneToFarmScene": {
         "x": 200,
         "y": 100
     },
-    "HouseScene": {
+    "MainMapSceneToHouseScene": {
         "x": 200,
         "y": 100
     },
-    "MainMapSceneToHouseScene": {
+    "FarmSceneToMainMapScene": {
+        "x": 200,
+        "y": 100
+    },
+    "HouseSceneToMainMapScene": {
         "x": 200,
         "y": 100
     }
@@ -46,7 +46,19 @@ export const MAIN_MAP_PORTAL_POSITION = {
         "y": 75
     }
 }
+export const HOUSE_PORTAL_POSITION = {
+    "MainMapPortal": {
+        "x": 400,
+        "y": 400
+    }
+}
+export const FARM_PORTAL_POSITION = {
+    "MainMapPortal": {
+        "x": 725,
+        "y": 75
+    }
+}
+export const DEFAULT_PORTAL_SIZE = 40;
 
 // 포탈 아이디 목록 (관리 편의)
 export const PORTAL_IDS = ['FarmPortal_1', 'HousePortal_1'];
-

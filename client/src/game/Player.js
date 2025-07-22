@@ -2,12 +2,13 @@ export default class Player {
   constructor(scene, id, x, y, color = 0x00ffcc) {
     this.id = id;
     this.scene = scene;
-    this.sprite = scene.add.rectangle(x, y, 40, 40, color);
+    this.sprite = scene.add.rectangle(x, y, 40, 40, color).setDepth(10);
     scene.physics.add.existing(this.sprite);
+    this.sprite.setCollideWorldBounds(true);
     this.target = { x, y };
     this.speed = 6;
     this.speedMultiplier = 1; // 기본값
-    console.log("Player constructor : ", this.id, this.scene, this.sprite, this.target, this.speed);
+    // console.log("Player constructor : ", this.id, this.scene, this.sprite, this.target, this.speed);
   }
 
   setTarget(x, y) {

@@ -1,3 +1,5 @@
+import socket from '../services/socket';
+
 export default class Portal {
   constructor(scene, id, x, y, radius, targetScene) {
     this.scene = scene;
@@ -36,9 +38,11 @@ export default class Portal {
       return;
     }
     const roomId = this.scene.roomId;
+    const myId = this.scene.myId;
     const inventory = this.scene.inventory ? this.scene.inventory.items : undefined;
     console.log("moveToTargetScene in Portal, roomId : ", roomId, "whoId : ", playerId, "directionFrom : ", this.scene.scene.key + 'To' + this.targetScene, "inventory : ", inventory);
     // 씬 이동
+    socket.emit('leave_scene', { roomId: roomId, userId: myId, scene: this.scene.scene.key});
     this.scene.scene.start(this.targetScene, {
       roomId,
       whoId: playerId,
