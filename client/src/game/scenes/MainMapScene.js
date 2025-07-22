@@ -71,14 +71,16 @@ export default class MainMapScene extends Phaser.Scene {
   }
 
   preload() {
-    this.load.tilemapTiledJSON('map', '/assets/first_map_real3.tmj');
+    this.load.tilemapTiledJSON('map', '/assets/madMap.tmj');
+    this.load.image('plant', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Plant.png');
     this.load.image('stair', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Struct.png');
     this.load.image('grass', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Tileset Grass.png');
     this.load.image('wall', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Tileset Wall.png');
     this.load.image('object', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Props.png');
+    this.load.image('water', '/assets/Water+-2.png');
     this.load.spritesheet('player', '/assets/RACCOONSPRITESHEET.png', { frameWidth: 32, frameHeight: 32 });
     this.load.image('glove','/assets/Punch.png');    
-    this.load.spritesheet('raccoon_hurt', '/assets/raccoon_hurt.png', { frameWidth: 32, frameHeight: 32 });
+    // this.load.spritesheet('raccoon_hurt', '/assets/raccoon_hurt.png', { frameWidth: 32, frameHeight: 32 });
     }
 
   create() {
@@ -107,37 +109,44 @@ export default class MainMapScene extends Phaser.Scene {
         repeat: -1
     })
 
-    this.physics.world.setBounds(0, 0, 1000, 1000);
+    this.physics.world.setBounds(0, 0, 40*32, 40*32);
 
     const map = this.make.tilemap({ key: 'map' });
 
   // 타일셋 이름과 이미지 키를 정확히 일치시켜야 함
     const wallset = map.addTilesetImage('wall', 'wall');
     const objectset = map.addTilesetImage('object', 'object');
-    const tileset = map.addTilesetImage('g', 'grass');
-    const stairset = map.addTilesetImage('stair', 'stair');
+    const tileset = map.addTilesetImage('grass', 'grass');
+    const stairset = map.addTilesetImage('struct', 'stair');
+    const waterset = map.addTilesetImage('water', 'water');
+    const plantset = map.addTilesetImage('plant', 'plant');
 
     // 레이어 이름도 정확히 일치시켜야 함
-    const grass_layer_0 = map.createLayer('grass_layer_0', tileset, 0, 0).setDepth(0);
-    const grass_layer_1 = map.createLayer('grass_layer_1', tileset, 0, 0).setDepth(0);
-    const grass_layer_2 = map.createLayer('grass_layer_2', tileset, 0, 0).setDepth(0);
-    this.wall_layer_1 = map.createLayer('wall_layer_1', wallset, 0, 0).setDepth(0);
-    this.wall_layer_2 = map.createLayer('wall_layer_2', wallset, 0, 0).setDepth(0);
-    const stair_layer = map.createLayer('stair_layer_1_2', stairset, 0, 0).setDepth(0);
-    this.propLayer = map.createLayer('object_layer_1', objectset, 0, 0).setDepth(0);
-    this.wall_layer_1.setCollisionByExclusion([-1]);
-    this.wall_layer_2.setCollisionByExclusion([-1]);
-    this.physics.add.collider(this.players[this.myId].sprite, this.propLayer);
-    this.physics.add.collider(this.players[this.myId].sprite, this.wall_layer_1);
-    this.physics.add.collider(this.players[this.myId].sprite, this.wall_layer_2);
-    // === 체스판(체커보드) 배경 그리기 ===
+    const grass_0 = map.createLayer('grass_0', tileset, 0, 0).setDepth(0);
+    const grass_1 = map.createLayer('grass_1', tileset, 0, 0).setDepth(0);
+    const grass_2 = map.createLayer('grass_2', tileset, 0, 0).setDepth(0);
+
+    this.wall_0 = map.createLayer('wall_0', wallset, 0, 0).setDepth(0);
+    this.wall_1 = map.createLayer('wall_1', wallset, 0, 0).setDepth(0);
+    this.wall_2 = map.createLayer('wall_2', wallset, 0, 0).setDepth(0);
+
+    this.wall_0.setCollisionByExclusion([-1]);
+    this.wall_1.setCollisionByExclusion([-1]);
+    
+    const stair = map.createLayer('stair', stairset, 0, 0).setDepth(0);
+    const water = map.createLayer('water', waterset, 0, 0).setDepth(0);
+    const object = map.createLayer('object', [objectset, plantset], 0, 0).setDepth(11);
+    
+    this.physics.add.collider(this.players[this.myId].sprite, this.wall_0);
+    this.physics.add.collider(this.players[this.myId].sprite, this.wall_1);
+    
     this.cameras.main.startFollow(this.players[this.myId].sprite);
     this.cameras.main.setZoom(3);
 
     //포탈 생성 및 초기화
-    this.Portal1 = new Portal(this, "3to2Portal", MAIN_MAP_PORTAL_POSITION['3to2Portal'].x, MAIN_MAP_PORTAL_POSITION['3to2Portal'].y, 40, undefined);
-    this.Portal2 = new Portal(this, "2to1Portal", MAIN_MAP_PORTAL_POSITION['2to1Portal'].x, MAIN_MAP_PORTAL_POSITION['2to1Portal'].y, 40, undefined);
-    this.Portal3 = new Portal(this, "1to2Portal", MAIN_MAP_PORTAL_POSITION['1to2Portal'].x, MAIN_MAP_PORTAL_POSITION['1to2Portal'].y, 40, undefined);
+    // this.Portal1 = new Portal(this, "3to2Portal", MAIN_MAP_PORTAL_POSITION['3to2Portal'].x, MAIN_MAP_PORTAL_POSITION['3to2Portal'].y, 40, undefined);
+    // this.Portal2 = new Portal(this, "2to1Portal", MAIN_MAP_PORTAL_POSITION['2to1Portal'].x, MAIN_MAP_PORTAL_POSITION['2to1Portal'].y, 40, undefined);
+    // this.Portal3 = new Portal(this, "1to2Portal", MAIN_MAP_PORTAL_POSITION['1to2Portal'].x, MAIN_MAP_PORTAL_POSITION['1to2Portal'].y, 40, undefined);
     // === 포탈 비활성화 실시간 동기화 핸들러 ===
     socket.off('portalDisabled');
     socket.on('portalDisabled', ({ portalId }) => {
@@ -153,7 +162,6 @@ export default class MainMapScene extends Phaser.Scene {
     socket.on('playersUpdate', ({ players }) => {
       Object.entries(players).forEach(([id, player]) => {
         if (!id || id === "undefined") return;
-        const threshold = 200; // 순간이동 감지 임계값(픽셀)
         if (!this.players[id]) {
           this.players[id] = new Player(this, id, player.x, player.y, id === this.myId ? 0x00ffcc : 0xffcc00);
           this.physics.add.collider(this.players[id].sprite, this.propLayer);
@@ -162,24 +170,13 @@ export default class MainMapScene extends Phaser.Scene {
         } else {
           const sprite = this.players[id].sprite;
           const dist = Math.hypot(sprite.x - player.x, sprite.y - player.y);
-          if (dist > threshold) {
-            // 순간이동 감지: 기존 객체 삭제 후 새로 생성
-            
-            sprite.destroy();
-            this.players[id] = new Player(this, id, player.x, player.y, id === this.myId ? 0x00ffcc : 0xffcc00);
-            this.physics.add.collider(this.players[id].sprite, this.propLayer);
-            this.physics.add.collider(this.players[id].sprite, this.wall_layer_1);
-            this.physics.add.collider(this.players[id].sprite, this.wall_layer_2);
-            if(id === this.myId) {
-              this.cameras.main.startFollow(this.players[id].sprite);
-            }
-        } else {
+          
             // 평소에는 기존 방식대로 target만 갱신
             if (id !== this.myId) {
               this.players[id].target.x = player.destX;
               this.players[id].target.y = player.destY;
             }
-          }
+          
         }
       });
       Object.keys(this.players).forEach(id => {
