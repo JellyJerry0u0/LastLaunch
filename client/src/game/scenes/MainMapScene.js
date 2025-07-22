@@ -74,9 +74,37 @@ export default class MainMapScene extends Phaser.Scene {
     this.load.image('test', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Tileset Grass.png');
     this.load.image('wall', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Tileset Wall.png');
     this.load.image('object', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Props.png');
+    this.load.spritesheet('player', '/assets/RACCOONSPRITESHEET.png', { frameWidth: 32, frameHeight: 32 });
   }
 
   create() {
+    this.anims.create({
+        key: 'walk-down',
+        frames: this.anims.generateFrameNumbers('player', { start: 20, end: 27 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'walk-left',
+        frames: this.anims.generateFrameNumbers('player', { start: 28, end: 35 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'walk-right',
+        frames: this.anims.generateFrameNumbers('player', { start: 36, end: 43 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'walk-up',
+        frames: this.anims.generateFrameNumbers('player', { start: 44, end: 51 }),
+        frameRate: 10,
+        repeat: -1
+    })
+
+    this.physics.world.setBounds(0, 0, 1000, 1000);
+
     const map = this.make.tilemap({ key: 'map' });
 
   // 타일셋 이름과 이미지 키를 정확히 일치시켜야 함
