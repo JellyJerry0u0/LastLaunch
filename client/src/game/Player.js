@@ -17,6 +17,59 @@ export default class Player {
     this.target.x = x;
     this.target.y = y;
   }
+  useGloveSkill(players) {
+    // 1. 글러브 이펙트 생성
+    const offset = 40 * this.sprite.scale; // 캐릭터 앞 거리
+    let gloveX = this.sprite.x, gloveY = this.sprite.y;
+    let dx = 0, dy = 0;
+    switch (this.lastDirection) {
+      case 'down': dy = offset; break;
+      case 'up': dy = -offset; break;
+      case 'left': dx = -offset; break;
+      case 'right': dx = offset; break;
+    }
+    gloveX += dx;
+    gloveY += dy;
+  
+    // 글러브 스프라이트 생성 (glove.png는 미리 preload 필요)
+    const glove = this.scene.add.sprite(gloveX, gloveY, 'glove').setDepth(20);
+    glove.setDisplaySize(64, 64);
+    // 방향에 따라 flipX만 조정, angle은 0으로 고정
+    if (this.lastDirection === 'left') {
+      glove.setFlipX(true);
+    } else if (this.lastDirection === 'right') {
+      glove.setFlipX(false);
+    } else {
+      glove.setFlipX(false);
+    }
+  
+    // 0.2초 후 글러브 제거
+    this.scene.time.delayedCall(200, () => glove.destroy());
+  
+    // 2. 앞에 있는 플레이어 판별 및 3. 밀어내기
+    players.forEach(other => {
+      if (other === this) return;
+      // 내 앞쪽 일정 범위 내에 있는지 체크
+      const dist = Phaser.Math.Distance.Between(gloveX, gloveY, other.sprite.x, other.sprite.y);
+      if (dist < 40) {
+        // 반대 방향으로 밀어내기 (velocity 부여)
+        let pushDx = 0, pushDy = 0;
+        switch (this.lastDirection) {
+          case 'down': pushDy = -1; break;
+          case 'up': pushDy = 1; break;
+          case 'left': pushDx = 1; break;
+          case 'right': pushDx = -1; break;
+        }
+        const pushPower = 400; // 밀어내는 힘
+        other.sprite.body.setVelocity(pushDx * pushPower, pushDy * pushPower);
+  
+        // 0.2초 후 멈춤
+        this.scene.time.delayedCall(200, () => {
+          other.sprite.body.setVelocity(0, 0);
+        });
+      }
+    });
+  }
 
   update() {
     const dx = this.target.x - this.sprite.x;

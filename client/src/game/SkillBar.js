@@ -127,6 +127,15 @@ export class SkillBar {
       this.scene.input.keyboard.on('keydown-E', () => {
         this.useSpeedUpSkill();
       });
+      this.scene.input.keyboard.on('keydown-D', () => {
+        console.log("D key pressed + glove skill effect");
+        // 내 플레이어와 전체 플레이어 목록이 필요
+        const myPlayer = this.scene.myPlayer;
+        const players = Object.values(this.scene.players);
+        if (myPlayer && players) {
+          myPlayer.useGloveSkill(players);
+        }
+      });
     }
 
     useSpeedUpSkill() {

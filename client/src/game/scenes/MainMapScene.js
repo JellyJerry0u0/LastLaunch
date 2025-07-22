@@ -75,7 +75,8 @@ export default class MainMapScene extends Phaser.Scene {
     this.load.image('wall', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Tileset Wall.png');
     this.load.image('object', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Props.png');
     this.load.spritesheet('player', '/assets/RACCOONSPRITESHEET.png', { frameWidth: 32, frameHeight: 32 });
-  }
+    this.load.image('glove','/assets/Punch.png');    
+    }
 
   create() {
     this.anims.create({
