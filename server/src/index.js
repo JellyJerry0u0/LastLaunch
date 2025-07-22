@@ -310,7 +310,7 @@ io.on('connection', (socket) => {
       console.log("userId is undefined in server (join_scene)");
     }
     roomPlayers[roomId][scene][userId] = { x: position.x, y: position.y, destX: position.x, destY: position.y};
-    console.log("roomPlayers[roomId][scene][userId] in server (join_scene) : ", roomPlayers[roomId][scene][userId]);
+    // console.log("roomPlayers[roomId][scene][userId] in server (join_scene) : ", roomPlayers[roomId][scene][userId]);
   });
   socket.on('itemPick', ({ roomId, scene, itemId }) => {
     if (roomItems[roomId] && roomItems[roomId][scene]) {
@@ -378,7 +378,9 @@ io.on('connection', (socket) => {
     console.log("leave_scene in server, roomId : ", roomId, "userId : ", userId, "scene : ", scene);
     if(roomPlayers[roomId] && roomPlayers[roomId][scene] && roomPlayers[roomId][scene][userId]) {
       delete roomPlayers[roomId][scene][userId];
+      console.log("socket.leave!!!")
       socket.leave(roomId + "_" + scene);
+      io.to(roomId + "_" + scene).emit('playersUpdate', { players: roomPlayers[roomId][scene] });
     }
   });
   socket.on('move', ({ roomId, userId, scene, x, y }) => {

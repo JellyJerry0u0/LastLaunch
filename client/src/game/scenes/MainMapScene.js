@@ -69,7 +69,28 @@ export default class MainMapScene extends Phaser.Scene {
     });
   }
 
+  preload() {
+    this.load.tilemapTiledJSON('map', '/assets/helloMap.tmj');
+    this.load.image('test', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Tileset Grass.png');
+    this.load.image('wall', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Tileset Wall.png');
+    this.load.image('object', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Props.png');
+  }
+
   create() {
+    const map = this.make.tilemap({ key: 'map' });
+
+  // 타일셋 이름과 이미지 키를 정확히 일치시켜야 함
+    const wallset = map.addTilesetImage('wall', 'wall');
+    const objectset = map.addTilesetImage('object', 'object');
+    const tileset = map.addTilesetImage('test', 'test');
+
+    // 레이어 이름도 정확히 일치시켜야 함
+    map.createLayer('grass_layer', tileset, 0, 0).setDepth(0);
+    map.createLayer('wall_layer', wallset, 0, 0).setDepth(0);
+    const propLayer = map.createLayer('prop_layer', objectset, 0, 0).setDepth(0);
+    propLayer.setCollisionByExclusion([-1]);
+    this.physics.add.collider(this.players[this.myId].sprite, propLayer);
+    
     // === 체스판(체커보드) 배경 그리기 ===
     this.cameras.main.startFollow(this.players[this.myId].sprite);
 
@@ -89,6 +110,7 @@ export default class MainMapScene extends Phaser.Scene {
     // === 기존 플레이어 동기화 로직 ===
     socket.off('playersUpdate');
     socket.on('playersUpdate', ({ players }) => {
+        // console.log("playersUpdate in MainMapScene, players : ", players);
         Object.entries(players).forEach(([id, player]) => {
           if (!id || id === "undefined") return;
           if (!this.players[id]) {
@@ -102,6 +124,7 @@ export default class MainMapScene extends Phaser.Scene {
         });
         Object.keys(this.players).forEach(id => {
           if (!players[id]) {
+            console.log("delete player in MainMapScene, id : ", id);
             this.players[id].sprite.destroy();
             delete this.players[id];
           }

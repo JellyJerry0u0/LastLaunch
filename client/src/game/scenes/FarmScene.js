@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
 import Player from '../Player';
 import socket from '../../services/socket';
-import { INITIAL_POSITION } from '../constants';
 import Ore from '../Ore';
 import Inventory from '../Inventory';
 import Item from '../Item';
+import Portal from '../Portal';
+import { FARM_PORTAL_POSITION, DEFAULT_PORTAL_SIZE, INITIAL_POSITION } from '../constants';
 
 export default class FarmScene extends Phaser.Scene {
   constructor() {
@@ -61,6 +62,15 @@ export default class FarmScene extends Phaser.Scene {
     this.input.keyboard.on('keyup-A', () => { this.aKeyDown = false; });
     this.input.keyboard.on('keydown-S', () => { this.sKeyDown = true; });
     this.input.keyboard.on('keyup-S', () => { this.sKeyDown = false; });
+    // 포탈 생성
+    this.MainMapPortal = new Portal(
+      this,
+      "MainMapPortal_1",
+      FARM_PORTAL_POSITION.MainMapPortal.x,
+      FARM_PORTAL_POSITION.MainMapPortal.y,
+      DEFAULT_PORTAL_SIZE,
+      'MainMapScene'
+    );
   }
 
   preload() {
@@ -168,7 +178,7 @@ export default class FarmScene extends Phaser.Scene {
     const dx = this.myPlayer.sprite.x - 400;
     const dy = this.myPlayer.sprite.y - 400;
     if(Math.hypot(dx, dy) < 40 && this.aKeyDown) {
-        this.moveToMainMapScene();
+        this.MainMapPortal.moveToTargetScene(this.myId);
     }
     Object.values(this.players).forEach(player => player.update());
   }
