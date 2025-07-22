@@ -76,6 +76,7 @@ export default class MainMapScene extends Phaser.Scene {
     this.load.image('object', '/assets/Pixel Art Top Down - Basic v1/Texture/TX Props.png');
     this.load.spritesheet('player', '/assets/RACCOONSPRITESHEET.png', { frameWidth: 32, frameHeight: 32 });
     this.load.image('glove','/assets/Punch.png');    
+    this.load.spritesheet('raccoon_hurt', '/assets/raccoon_hurt.png', { frameWidth: 32, frameHeight: 32 });
     }
 
   create() {
@@ -160,10 +161,23 @@ export default class MainMapScene extends Phaser.Scene {
           }
         });
       });
+    // === 넉백 신호 수신 ===
+    socket.off('knockback');
+    socket.on('knockback', ({ toId, direction }) => {
+      if (this.players[toId]) {
+        this.players[toId].startKnockback(direction);
+      }
+    });
+    // === 넉백 해제 신호 수신 ===
+    socket.off('knockbackReleased');
+    socket.on('knockbackReleased', ({ id }) => {
+      if (this.players[id]) {
+        this.players[id].isKnockback = false;
+      }
+    });
     // === 마우스 클릭 시 내 캐릭터 이동 ===
     this.input.on('pointerdown', (pointer) => {
-      if (this.players[this.myId]) {
-        console.log("pointerdown in MainMapScene, myId : ", this.myId);
+      if (this.players[this.myId] && !this.players[this.myId].isKnockback) {
         this.players[this.myId].setTarget(pointer.worldX, pointer.worldY);
         socket.emit('move', { roomId: this.roomId, userId: this.myId, scene: 'MainMapScene', x: pointer.worldX, y: pointer.worldY });
       }
@@ -178,6 +192,13 @@ export default class MainMapScene extends Phaser.Scene {
       this.inventory.items = this.items;
       this.inventory.updateAllSlots();
     }
+    // === 글로브 이펙트 신호 수신 ===
+    socket.off('gloveEffect');
+    socket.on('gloveEffect', ({ fromId, direction }) => {
+      if (this.players[fromId]) {
+        this.players[fromId].showGloveEffect(direction);
+      }
+    });
   }
 
   update() {

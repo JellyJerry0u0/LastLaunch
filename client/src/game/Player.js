@@ -12,6 +12,7 @@ export default class Player {
     this.speed = 30;
     this.speedMultiplier = 1; // 기본값
     this.lastDirection = 'down'; // 마지막 이동 방향
+    this.isKnockback = false;
     // console.log("Player constructor : ", this.id, this.scene, this.sprite, this.target, this.speed);
   }
 
@@ -72,7 +73,88 @@ export default class Player {
     });
   }
 
+  showGloveEffect(direction) {
+    const offset = 40 * this.sprite.scale;
+    let gloveX = this.sprite.x, gloveY = this.sprite.y;
+    let dx = 0, dy = 0;
+    switch (direction) {
+      case 'down': dy = offset; break;
+      case 'up': dy = -offset; break;
+      case 'left': dx = -offset; break;
+      case 'right': dx = offset; break;
+    }
+    gloveX += dx;
+    gloveY += dy;
+
+    const glove = this.scene.add.sprite(gloveX, gloveY, 'glove').setDepth(20);
+    glove.setDisplaySize(64, 64);
+    if (direction === 'left') {
+      glove.setFlipX(true);
+      glove.angle = 0;
+    } else if (direction === 'right') {
+      glove.setFlipX(false);
+      glove.angle = 0;
+    } else if (direction === 'up') {
+      glove.setFlipX(false);
+      glove.angle = -90;
+    } else if (direction === 'down') {
+      glove.setFlipX(false);
+      glove.angle = 90;
+    }
+    this.scene.time.delayedCall(200, () => glove.destroy());
+  }
+
+  startKnockback(direction) {
+    if (this.isKnockback) return;
+    this.isKnockback = true;
+    const knockbackDistance = 150;
+    const knockbackDuration = 350;
+    const arcHeight = 30;
+
+    // 스프라이트시트 사용 제거: 텍스처 변경 없이 기존 player 텍스처만 사용
+    // (필요하다면, 맞은 방향에 따라 setFrame만 변경 가능)
+
+    let dx = 0, dy = 0;
+    switch (direction) {
+      case 'left': dx = -knockbackDistance; break;
+      case 'right': dx = knockbackDistance; break;
+      case 'up': dy = -knockbackDistance; break;
+      case 'down': dy = knockbackDistance; break;
+    }
+
+    const originX = this.sprite.x;
+    const originY = this.sprite.y;
+    const destX = originX + dx;
+    const destY = originY + dy;
+
+    this.scene.tweens.add({
+      targets: { t: 0 },
+      t: 1,
+      duration: knockbackDuration,
+      ease: 'Linear',
+      onUpdate: (tween, target) => {
+        const t = target.t;
+        this.sprite.x = originX + (destX - originX) * t;
+        this.sprite.y = originY + (destY - originY) * t - ( -4 * arcHeight * (t - 0.5) * (t - 0.5) + arcHeight );
+      },
+      onComplete: () => {
+        // 넉백 끝나면 idle 프레임으로 복귀
+        this.sprite.setFrame(this.getIdleFrame(this.lastDirection));
+        socket.emit('knockbackEnd', {
+          roomId: this.scene.roomId,
+          scene: this.scene.scene.key,
+          id: this.id,
+          x: this.sprite.x,
+          y: this.sprite.y
+        });
+        this.target.x = this.sprite.x;
+        this.target.y = this.sprite.y;
+      }
+    });
+  }
+
   update() {
+    if (this.isKnockback) return;
     const dx = this.target.x - this.sprite.x;
     const dy = this.target.y - this.sprite.y;
     const dist = Math.hypot(dx, dy);

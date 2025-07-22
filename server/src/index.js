@@ -392,25 +392,35 @@ io.on('connection', (socket) => {
   });
   // 글러브 스킬(밀어내기) 처리
   socket.on('gloveSkill', ({ roomId, scene, fromId, toId, direction }) => {
+    // 글로브 이펙트 신호 브로드캐스트
+    io.to(roomId + "_" + scene).emit('gloveEffect', {
+      fromId,
+      direction
+    });
+    // 기존 knockback 신호
     if (
       roomPlayers[roomId] &&
       roomPlayers[roomId][scene] &&
       roomPlayers[roomId][scene][toId]
     ) {
-      const player = roomPlayers[roomId][scene][toId];
-      const pushPower = 400; // 훨씬 더 멀리 밀어냄
-      let dx = 0, dy = 0;
-      switch (direction) {
-        case 'down': dy = pushPower; break;
-        case 'up': dy = -pushPower; break;
-        case 'left': dx = -pushPower; break;
-        case 'right': dx = pushPower; break;
-      }
-      player.destX += dx;
-      player.destY += dy;
-      player.x += dx;
-      player.y += dy;
-      // playersUpdate는 setInterval에서 자동 emit됨
+      io.to(roomId + "_" + scene).emit('knockback', { toId, direction });
+    }
+  });
+
+  // knockbackEnd 이벤트 처리 (넉백 끝났음을 클라가 서버에 알림)
+  socket.on('knockbackEnd', ({ roomId, scene, id, x, y }) => {
+    if (
+      roomPlayers[roomId] &&
+      roomPlayers[roomId][scene] &&
+      roomPlayers[roomId][scene][id]
+    ) {
+      // 1. 서버 위치 갱신
+      roomPlayers[roomId][scene][id].x = x;
+      roomPlayers[roomId][scene][id].y = y;
+      roomPlayers[roomId][scene][id].destX = x;
+      roomPlayers[roomId][scene][id].destY = y;
+      // 2. 넉백 해제 신호 전송 (특정 유저에게만)
+      io.to(roomId + "_" + scene).emit('knockbackReleased', { id });
     }
   });
   // Handle disconnect
