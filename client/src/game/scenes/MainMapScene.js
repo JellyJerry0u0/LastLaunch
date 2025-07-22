@@ -151,6 +151,7 @@ export default class MainMapScene extends Phaser.Scene {
             this.players[id].target.y = player.destY;
           }
         });
+        
         Object.keys(this.players).forEach(id => {
           if (!players[id]) {
             console.log("delete player in MainMapScene, id : ", id);

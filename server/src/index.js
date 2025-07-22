@@ -390,6 +390,29 @@ io.on('connection', (socket) => {
       roomPlayers[roomId][scene][userId].destY = y;
     }
   });
+  // 글러브 스킬(밀어내기) 처리
+  socket.on('gloveSkill', ({ roomId, scene, fromId, toId, direction }) => {
+    if (
+      roomPlayers[roomId] &&
+      roomPlayers[roomId][scene] &&
+      roomPlayers[roomId][scene][toId]
+    ) {
+      const player = roomPlayers[roomId][scene][toId];
+      const pushPower = 400; // 훨씬 더 멀리 밀어냄
+      let dx = 0, dy = 0;
+      switch (direction) {
+        case 'down': dy = pushPower; break;
+        case 'up': dy = -pushPower; break;
+        case 'left': dx = -pushPower; break;
+        case 'right': dx = pushPower; break;
+      }
+      player.destX += dx;
+      player.destY += dy;
+      player.x += dx;
+      player.y += dy;
+      // playersUpdate는 setInterval에서 자동 emit됨
+    }
+  });
   // Handle disconnect
   socket.on('disconnect', () => {
     console.log('Socket disconnected:', socket.id);

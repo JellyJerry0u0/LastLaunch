@@ -1,3 +1,5 @@
+import socket from '../services/socket';
+
 export default class Player {
   constructor(scene, id, x, y, color = 0x00ffcc) {
     this.id = id;
@@ -30,7 +32,7 @@ export default class Player {
     }
     gloveX += dx;
     gloveY += dy;
-  
+
     // 글러브 스프라이트 생성 (glove.png는 미리 preload 필요)
     const glove = this.scene.add.sprite(gloveX, gloveY, 'glove').setDepth(20);
     glove.setDisplaySize(64, 64);
@@ -45,34 +47,26 @@ export default class Player {
       glove.setFlipX(false);
       glove.angle = -90;
     }
-     else if (this.lastDirection === 'down'){
+    else if (this.lastDirection === 'down'){
       glove.setFlipX(false);
       glove.angle = 90;
     }
-  
+
     // 0.2초 후 글러브 제거
     this.scene.time.delayedCall(200, () => glove.destroy());
-  
-    // 2. 앞에 있는 플레이어 판별 및 3. 밀어내기
+
+    // 2. 앞에 있는 플레이어 판별 및 3. 서버에 밀어내기 이벤트 emit
     players.forEach(other => {
       if (other === this) return;
-      // 내 앞쪽 일정 범위 내에 있는지 체크
       const dist = Phaser.Math.Distance.Between(gloveX, gloveY, other.sprite.x, other.sprite.y);
       if (dist < 40) {
-        // 반대 방향으로 밀어내기 (velocity 부여)
-        let pushDx = 0, pushDy = 0;
-        switch (this.lastDirection) {
-          case 'down': pushDy = -1; break;
-          case 'up': pushDy = 1; break;
-          case 'left': pushDx = 1; break;
-          case 'right': pushDx = -1; break;
-        }
-        const pushPower = 400; // 밀어내는 힘
-        other.sprite.body.setVelocity(pushDx * pushPower, pushDy * pushPower);
-  
-        // 0.2초 후 멈춤
-        this.scene.time.delayedCall(200, () => {
-          other.sprite.body.setVelocity(0, 0);
+        // 서버에 gloveSkill 이벤트 emit
+        socket.emit('gloveSkill', {
+          roomId: this.scene.roomId,
+          scene: this.scene.scene.key,
+          fromId: this.id,
+          toId: other.id,
+          direction: this.lastDirection
         });
       }
     });
