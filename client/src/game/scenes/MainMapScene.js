@@ -189,6 +189,13 @@ export default class MainMapScene extends Phaser.Scene {
         }
       });
     });
+    //넉백 신호 수신
+    socket.off('knockback')
+    socket.on('knockback', ({ toId, direction }) => {
+        if(this.players[toId]) {
+            this.players[toId].startKnockback(direction);
+        }
+    });
     // === 넉백 해제 신호 수신 ===
     socket.off('knockbackReleased');
     socket.on('knockbackReleased', ({ id }) => {
