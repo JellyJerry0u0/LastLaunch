@@ -4,7 +4,7 @@ import MainMapScene from '../game/scenes/MainMapScene';
 import FarmScene from '../game/scenes/FarmScene';
 import HouseScene from '../game/scenes/HouseScene';
 // import LoadingScene from '../game/scenes/LoadingScene';
-import { useParams, useLocation } from 'react-router-dom';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { STARTING_POINT } from '../game/constants';
 
 // DeathBoard 컴포넌트
@@ -69,15 +69,43 @@ function DeathBoard({ players, myId }) {
   );
 }
 
+// TimerBoard 컴포넌트
+function TimerBoard({ seconds }) {
+  const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const ss = String(seconds % 60).padStart(2, '0');
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 20,
+      left: '50%',
+      transform: 'translateX(-50%)',
+      background: 'rgba(34,34,34,0.85)',
+      borderRadius: 12,
+      padding: '8px 24px',
+      color: '#fff',
+      fontSize: 28,
+      fontWeight: 'bold',
+      zIndex: 99998,
+      letterSpacing: 2
+    }}>
+      제한시간 {mm}:{ss}
+    </div>
+  );
+}
+
 const MyGame = () => {
   const params = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const roomId = params.roomId;
   const myId = params.userId;
   const character = location.state?.character;
   const currentUsers = location.state?.currentUsers;
   const gameRef = useRef(null);
   const [deathBoard, setDeathBoard] = useState([]);
+  const [result, setResult] = useState(null);
+  const [timer, setTimer] = useState(10);
+  const [timerActive, setTimerActive] = useState(true);
 
   useEffect(() => {
     let game;
@@ -105,17 +133,68 @@ const MyGame = () => {
     // 데스보드 이벤트 리스너
     const handleDeathBoard = e => setDeathBoard(e.detail);
     window.addEventListener('deathBoardUpdate', handleDeathBoard);
+    // 게임 결과 이벤트 리스너
+    const handleResult = e => setResult(e.detail);
+    window.addEventListener('gameResult', handleResult);
+    // 타이머 이벤트 리스너
+    const handleTimer = e => setTimer(e.detail);
+    window.addEventListener('gameTimer', handleTimer);
+    // 타이머 시작
+    let timerInterval = null;
+    setTimer(120);
+    setTimerActive(true);
+    let t = 120;
+    timerInterval = setInterval(() => {
+      t -= 1;
+      if (t < 0) t = 0;
+      window.dispatchEvent(new CustomEvent('gameTimer', { detail: t }));
+      if (t === 0) {
+        clearInterval(timerInterval);
+      }
+    }, 1000);
     return () => {
       window.removeEventListener('resize', onResize);
       window.removeEventListener('deathBoardUpdate', handleDeathBoard);
+      window.removeEventListener('gameResult', handleResult);
+      window.removeEventListener('gameTimer', handleTimer);
+      if (timerInterval) clearInterval(timerInterval);
       if (game) game.destroy(true);
     };
   }, [roomId, myId, character, currentUsers]);
+
+  // 게임 종료 시 타이머 중지
+  useEffect(() => {
+    if (result) setTimerActive(false);
+  }, [result]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
       <div ref={gameRef} style={{ width: '100%', height: '100%' }} />
       <DeathBoard players={deathBoard} myId={myId} />
+      {timerActive && <TimerBoard seconds={timer} />}
+      {result && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.7)', zIndex: 10001, display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{ background: '#222', borderRadius: 16, padding: 32, color: '#fff', minWidth: 320 }}>
+            <h2 style={{ textAlign: 'center' }}>게임 종료</h2>
+            <ol>
+              {result.map((p, i) => (
+                <li key={p.id} style={{ margin: 8, fontWeight: i === 0 ? 'bold' : 'normal' }}>
+                  {i + 1}등: {p.id} (Death: {p.deathCount})
+                </li>
+              ))}
+            </ol>
+            <button
+              style={{ marginTop: 24, width: '100%', padding: 12, fontSize: 18, borderRadius: 8, background: '#444', color: '#fff', border: 'none', cursor: 'pointer' }}
+              onClick={() => navigate(`/lobby/${myId}`)}
+            >
+              로비로 돌아가기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

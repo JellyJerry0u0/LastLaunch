@@ -249,6 +249,13 @@ export default class MainMapScene extends Phaser.Scene {
         window.dispatchEvent(new CustomEvent('deathBoardUpdate', { detail: deathBoard }));
       }
     });
+    // === 서버 gameOver 소켓 이벤트 수신 ===
+    socket.off('gameOver');
+    socket.on('gameOver', () => {
+      // 현재 deathBoardData를 등수로 정렬해서 결과 이벤트로 전달
+      const sorted = [...(this.deathBoardData || [])].sort((a, b) => a.deathCount - b.deathCount);
+      window.dispatchEvent(new CustomEvent('gameResult', { detail: sorted }));
+    });
     //넉백 신호 수신
     socket.off('knockback')
     socket.on('knockback', ({ toId, direction }) => {

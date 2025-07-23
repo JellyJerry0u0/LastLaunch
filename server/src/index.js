@@ -134,6 +134,10 @@ const roomPlayers = {};
 const roomOres = {};
 const roomItems = {};
 const roomPortals = {};
+// --- 서버 상단에 타이머 관리용 객체 추가 ---
+const roomTimers = {};
+// 게임 제한시간(초)
+const GAME_DURATION_SECONDS = 120;
 
 io.on('connection', (socket) => {
   console.log('New WebSocket connection:', socket.id);
@@ -307,6 +311,20 @@ io.on('connection', (socket) => {
     if (position && position.character) character = position.character;
     roomPlayers[roomId][scene][userId] = { x: position.x, y: position.y, destX: position.x, destY: position.y, character };
     // console.log("roomPlayers[roomId][scene][userId] in server (join_scene) : ", roomPlayers[roomId][scene][userId]);
+    // 타이머가 없으면 시작
+    if (!roomTimers[roomId + '_' + scene]) {
+      roomTimers[roomId + '_' + scene] = setTimeout(async () => {
+        io.to(roomId + '_' + scene).emit('gameOver');
+        delete roomTimers[roomId + '_' + scene];
+        // === 게임룸 DB에서 삭제 ===
+        try {
+          await GameRoom.findByIdAndDelete(roomId);
+          console.log(`GameRoom ${roomId} deleted after game over.`);
+        } catch (err) {
+          console.error('Failed to delete GameRoom:', err);
+        }
+      }, GAME_DURATION_SECONDS * 1000);
+    }
   });
   socket.on('itemPick', ({ roomId, scene, itemId }) => {
     if (roomItems[roomId] && roomItems[roomId][scene]) {
