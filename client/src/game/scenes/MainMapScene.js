@@ -65,6 +65,7 @@ export default class MainMapScene extends Phaser.Scene {
       if (this.FarmPortal) {
         if (portals && portals.FarmPortal_1 === false) this.FarmPortal.setEnabled(false);
         else this.FarmPortal.setEnabled(true);
+        
       }
       if (this.HousePortal) {
         if (portals && portals.HousePortal_1 === false) this.HousePortal.setEnabled(false);
