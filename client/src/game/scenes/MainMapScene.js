@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import Player from '../Player';
 import socket from '../../services/socket';
-import { INITIAL_POSITION } from '../constants';
+import { STARTING_POINT } from '../constants';
 import { MAIN_MAP_PORTAL_POSITION } from '../constants';
 import Inventory from '../Inventory';
 import { SkillBar } from '../SkillBar';
@@ -52,7 +52,7 @@ export default class MainMapScene extends Phaser.Scene {
     this.players = {}; // 서버로 부터 받아옴
     this.items = data.inventory || new Array(5).fill(null); // 인벤토리 데이터 받기
     
-    this.initialPosition = INITIAL_POSITION[this.directionFrom];
+    this.initialPosition = STARTING_POINT[this.directionFrom];
     this.character = data.character || { sprite: 'RACCOONSPRITESHEET.png', key: 'RACCOON' };
     // 내 플레이어 생성 (내 id를 key로)
     this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc, this.myId);

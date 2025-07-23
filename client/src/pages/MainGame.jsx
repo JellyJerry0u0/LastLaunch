@@ -5,6 +5,7 @@ import FarmScene from '../game/scenes/FarmScene';
 import HouseScene from '../game/scenes/HouseScene';
 // import LoadingScene from '../game/scenes/LoadingScene';
 import { useParams, useLocation } from 'react-router-dom';
+import { STARTING_POINT } from '../game/constants';
 
 const MyGame = () => {
   const params = useParams();
@@ -30,8 +31,10 @@ const MyGame = () => {
       }
     };
     game = new Phaser.Game(config);
+    console.log(STARTING_POINT[character]);
+    console.log(character);
     // MainMapScene에 초기 데이터 전달 (캐릭터 정보 포함)
-    game.scene.start('MainMapScene', { roomId: roomId, whoId: myId, directionFrom: 'StartingPoint', character, currentUsers });
+    game.scene.start('MainMapScene', { roomId: roomId, whoId: myId, directionFrom: character.key, character, currentUsers });
     // MainMapScene은 LoadingScene에서 start
     const onResize = () => game.scale.resize(window.innerWidth, window.innerHeight);
     window.addEventListener('resize', onResize);
