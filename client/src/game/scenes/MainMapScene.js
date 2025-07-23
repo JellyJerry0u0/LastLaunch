@@ -279,6 +279,7 @@ export default class MainMapScene extends Phaser.Scene {
     const hy = this.myPlayer.sprite.y - MAIN_MAP_PORTAL_POSITION['2to1Portal'].y;
     if(Math.hypot(hx, hy) < 40 && this.aKeyDown) {
         this.Portal2.moveWithinScene();
+        
     }
     const ex = this.myPlayer.sprite.x - MAIN_MAP_PORTAL_POSITION['1to2Portal'].x;
     const ey = this.myPlayer.sprite.y - MAIN_MAP_PORTAL_POSITION['1to2Portal'].y;
