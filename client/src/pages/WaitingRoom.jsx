@@ -231,7 +231,7 @@ const WaitingRoom = () => {
       {/* 기존 UI */}
       <div className="cmd-window">
         <div className="cmd-header">
-          <div className="cmd-title">Last-Launch Terminal</div>
+          <div className="cmd-title">Last-Punch Terminal</div>
           <div className="cmd-controls">
             <span className="cmd-control minimize">─</span>
             <span className="cmd-control maximize">□</span>

@@ -164,7 +164,7 @@ const LobbyPage = () => {
     <div className="lobby-container">
       {showExtract && (
         <div className="extract-overlay">
-          <div className="extract-text">Last-Launch.zip 압축 푸는 중...</div>
+          <div className="extract-text">Last-Punch.zip 압축 푸는 중...</div>
           <div className="extract-progress">
             <div 
               className="extract-progress-bar" 
@@ -175,7 +175,7 @@ const LobbyPage = () => {
         </div>
       )}
       
-      <h1 className="lobby-title">Last-Launch</h1>
+      <h1 className="lobby-title">Last-Punch</h1>
       
       <div className="rooms-container">
         {loading ? (

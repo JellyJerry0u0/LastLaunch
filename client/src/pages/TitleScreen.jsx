@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAudio } from "../contexts/AudioContext";
 import "./TitleScreen.css";
 
-const TITLE = "Last_Launch";
+const TITLE = "Last_Punch";
 const TYPING_SPEED = 100; // ms per character
 const GLITCH_DURATION = 1200; // ms
 const TV_OFF_DURATION = 700; // ms

@@ -581,7 +581,7 @@ const SignUp = () => {
       {tvOff && <div className="tv-off-overlay" />}
       {showCmdBox && !showFileBox ? (
         <div className="cmd-box">
-          <div className="cmd-title">[ LastLaunch CMD ]</div>
+          <div className="cmd-title">[ LastPunch CMD ]</div>
           {glitch ? (
             <>
               <div className="cmd-glitch">{glitchText[0]}</div>
@@ -621,7 +621,7 @@ const SignUp = () => {
       ) : null}
       {showFileBox && (
         <div className="file-box">
-          <div className="file-box-filename">마지막으로 수정한 파일: <b>Last-Launch.txt</b></div>
+          <div className="file-box-filename">마지막으로 수정한 파일: <b>Last-Punch.txt</b></div>
           <div style={{ textAlign: 'left', width: '100%' }}>
             {typedFileBoxText.split('\n').map((line, idx) => (
               <React.Fragment key={idx}>
