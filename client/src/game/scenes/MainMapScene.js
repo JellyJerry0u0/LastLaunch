@@ -175,7 +175,7 @@ export default class MainMapScene extends Phaser.Scene {
     this.skillBar = new SkillBar(this); //스킬바 생성
     // === 기존 플레이어 동기화 로직 ===
     socket.off('playersUpdate');
-    socket.on('playersUpdate', ({ players }) => {
+    socket.on('playersUpdate', ({ players, isTeleport }) => {
       Object.entries(players).forEach(([id, player]) => {
         if (!id || id === "undefined") return;
         // Player 생성 시 텍스처 키로 id 사용
@@ -187,10 +187,18 @@ export default class MainMapScene extends Phaser.Scene {
         } else {
           const sprite = this.players[id].sprite;
           const dist = Math.hypot(sprite.x - player.x, sprite.y - player.y);
-          // 평소에는 기존 방식대로 target만 갱신
-          if (id !== this.myId) {
-            this.players[id].target.x = player.destX;
-            this.players[id].target.y = player.destY;
+          // === 텔레포트 신호가 온 경우 ===
+          if (isTeleport && (sprite.x !== player.x || sprite.y !== player.y)) {
+            sprite.x = player.x;
+            sprite.y = player.y;
+            this.players[id].target.x = player.x;
+            this.players[id].target.y = player.y;
+          } else {
+            // 평소에는 기존 방식대로 target만 갱신
+            if (id !== this.myId) {
+              this.players[id].target.x = player.destX;
+              this.players[id].target.y = player.destY;
+            }
           }
         }
       });
@@ -239,20 +247,28 @@ export default class MainMapScene extends Phaser.Scene {
         this.players[fromId].showGloveEffect(direction);
       }
     });
-    // water 레이어와 충돌 시 스폰 위치로 이동
-    this.physics.add.collider(this.players[this.myId].sprite, water, () => {
-      // 플레이어를 스폰 위치로 이동
-      this.players[this.myId].sprite.x = this.initialPosition.x;
-      this.players[this.myId].sprite.y = this.initialPosition.y;
-      // 서버에도 위치 갱신
-      socket.emit('move', {
-        roomId: this.roomId,
-        userId: this.myId,
-        scene: this.scene.key,
-        x: this.initialPosition.x,
-        y: this.initialPosition.y
+    // water 레이어와 충돌 시 스폰 위치로 순간이동
+    this.physics.add.overlap(this.players[this.myId].sprite, water, (playerSprite, tileLayer) => {
+        if (this.isRespawning) return;
+      
+        // 플레이어의 현재 위치에 해당하는 타일 좌표 계산
+        const tile = water.getTileAtWorldXY(playerSprite.x, playerSprite.y, true);
+      
+        // 타일이 실제로 존재하는 경우(즉, 물 타일 위에 있을 때)만 텔레포트
+        if (tile && tile.index !== -1) {
+          this.isRespawning = true;
+          playerSprite.x = this.initialPosition.x;
+          playerSprite.y = this.initialPosition.y;
+          socket.emit('teleport', {
+            roomId: this.roomId,
+            userId: this.myId,
+            scene: this.scene.key,
+            x: this.initialPosition.x,
+            y: this.initialPosition.y
+          });
+          this.time.delayedCall(1000, () => { this.isRespawning = false; });
+        }
       });
-    });
   }
 
   update() {
