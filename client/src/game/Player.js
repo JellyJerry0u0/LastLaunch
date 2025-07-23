@@ -211,4 +211,22 @@ export default class Player {
       default: return 20;
     }
   }
+
+  // 죽었을 때 반투명+깜빡임 효과 (1초)
+  showDeathBlinkEffect() {
+    const sprite = this.sprite;
+    let blinkCount = 0;
+    const blinkTotal = 8; // 1초 동안 8번 깜빡임
+    const blinkInterval = 125; // ms
+    const blink = () => {
+      if (blinkCount >= blinkTotal) {
+        sprite.setAlpha(1);
+        return;
+      }
+      sprite.setAlpha(blinkCount % 2 === 0 ? 0.3 : 0.7);
+      blinkCount++;
+      setTimeout(blink, blinkInterval);
+    };
+    blink();
+  }
 } 

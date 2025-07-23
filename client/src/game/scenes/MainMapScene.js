@@ -328,6 +328,10 @@ export default class MainMapScene extends Phaser.Scene {
           this.isRespawning = true;
           playerSprite.x = this.initialPosition.x;
           playerSprite.y = this.initialPosition.y;
+          // 깜빡임 효과 추가
+          if (this.myPlayer && this.myPlayer.showDeathBlinkEffect) {
+            this.myPlayer.showDeathBlinkEffect();
+          }
           socket.emit('teleport', {
             roomId: this.roomId,
             userId: this.myId,
@@ -338,6 +342,13 @@ export default class MainMapScene extends Phaser.Scene {
           this.time.delayedCall(1000, () => { this.isRespawning = false; });
         }
       });
+    // === deathBlink 신호 수신: 모든 유저가 해당 캐릭터 깜빡임 효과 ===
+    socket.off('deathBlink');
+    socket.on('deathBlink', ({ userId }) => {
+      if (this.players[userId] && this.players[userId].showDeathBlinkEffect) {
+        this.players[userId].showDeathBlinkEffect();
+      }
+    });
   }
 
   update() {

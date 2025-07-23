@@ -6,6 +6,7 @@ import HouseScene from '../game/scenes/HouseScene';
 // import LoadingScene from '../game/scenes/LoadingScene';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { STARTING_POINT } from '../game/constants';
+import SkillBar from '../components/SkillBar';
 
 // DeathBoard 컴포넌트
 function SpritePortrait({ character }) {
@@ -170,6 +171,7 @@ const MyGame = () => {
   return (
     <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
       <div ref={gameRef} style={{ width: '100%', height: '100%' }} />
+      <SkillBar skills={[null]} />
       <DeathBoard players={deathBoard} myId={myId} />
       {timerActive && <TimerBoard seconds={timer} />}
       {result && (

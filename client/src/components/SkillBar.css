@@ -1,0 +1,67 @@
+.skillbar-root {
+    position: fixed;
+    left: 24px;
+    bottom: 24px;
+    display: grid;
+    grid-template-columns: 56px;
+    grid-template-rows: 56px;
+    gap: 0px;
+    background: rgba(34, 34, 68, 0.85);
+    border-radius: 14px;
+    padding: 6px 8px;
+    z-index: 1000;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  }
+  
+  .skillbar-slot {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    background: #444466;
+    border-radius: 8px;
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+  }
+  
+  .skillbar-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+      /* 중앙 정렬을 위해 margin 제거 및 flex 적용 */
+  display: block;
+  margin: 0 auto;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    object-fit: contain;
+  }
+  
+  .skillbar-key {
+    position: absolute;
+    left: 8px;
+    bottom: 6px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 2px #222;
+    pointer-events: none;
+  }
+  .skillbar-cooldown-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(80,80,80,0.55);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+  
+  .skillbar-cooldown-text {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #222;
+  } 
+  

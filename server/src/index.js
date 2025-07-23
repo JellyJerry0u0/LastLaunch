@@ -433,6 +433,8 @@ io.on('connection', (socket) => {
       });
 
       io.to(roomId + '_' + scene).emit('playersUpdate', { players: roomPlayers[roomId][scene], isTeleport: true });
+      // deathBlink 신호도 같이 보냄
+      io.to(roomId + '_' + scene).emit('deathBlink', { userId });
     }
   });
   // 글러브 스킬(밀어내기) 처리

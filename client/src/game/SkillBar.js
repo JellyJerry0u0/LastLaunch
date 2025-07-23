@@ -6,10 +6,10 @@ export class SkillBar {
       this.scene = scene;
       this.slotSize = 60;
       this.slotSpacing = 10;
-      this.cols = 3;
-      this.rows = 2;
+      this.cols = 1; // 1열
+      this.rows = 1; // 1행
       this.slots = [];
-      this.skills = new Array(6).fill(null); // 6개 슬롯
+      this.skills = new Array(1).fill(null); // 1개 슬롯
       // 화면 왼쪽 아래에 고정
       this.x = x;
       this.y = y !== null ? y : this.scene.cameras.main.height - 150;
@@ -33,8 +33,8 @@ export class SkillBar {
         10
       );
       background.setScrollFactor(0, 0);
-  
-      // 6개의 슬롯 생성 (3x2)
+
+      // 1개의 슬롯 생성 (1x1)
       for (let row = 0; row < this.rows; row++) {
         for (let col = 0; col < this.cols; col++) {
           const idx = row * this.cols + col;
@@ -48,7 +48,7 @@ export class SkillBar {
           slot.setScrollFactor(0, 0);
           this.slots.push(slot);
           // 키 라벨 추가
-          const keyLabels = ['Q', 'W', 'E', 'A', 'S', 'D'];
+          const keyLabels = ['A'];
           const label = this.scene.add.text(
             slotX + 6,
             slotY + this.slotSize - 24,
@@ -71,7 +71,7 @@ export class SkillBar {
   
     // 특정 슬롯에 스킬 장착
     setSkill(slotIndex, skill) {
-      if (slotIndex < 0 || slotIndex >= 6) return false;
+      if (slotIndex < 0 || slotIndex >= 1) return false;
       this.skills[slotIndex] = skill;
       this.updateSlot(slotIndex);
       return true;
@@ -102,7 +102,7 @@ export class SkillBar {
   
     // 전체 슬롯 UI 업데이트
     updateAllSlots() {
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 1; i++) {
         this.updateSlot(i);
       }
     }
@@ -118,6 +118,7 @@ export class SkillBar {
     }
 
     handleKeyInput() {
+      this._gloveSkillCooldown = false;
       this.scene.input.keyboard.on('keydown-Q', () => {
         this.showSkillTargetModal();
       });
@@ -127,14 +128,20 @@ export class SkillBar {
       this.scene.input.keyboard.on('keydown-E', () => {
         this.useSpeedUpSkill();
       });
-      this.scene.input.keyboard.on('keydown-D', () => {
-        console.log("D key pressed + glove skill effect");
+      this.scene.input.keyboard.on('keydown-A', () => {
+        if (this._gloveSkillCooldown) return; // 쿨타임 중이면 무시
+        this._gloveSkillCooldown = true;
+        window.dispatchEvent(new CustomEvent('glove-cooldown', { detail: { duration: 1000 } }));
+        console.log("A key pressed + glove skill effect");
         // 내 플레이어와 전체 플레이어 목록이 필요
         const myPlayer = this.scene.myPlayer;
         const players = Object.values(this.scene.players);
         if (myPlayer && players) {
           myPlayer.useGloveSkill(players);
         }
+        setTimeout(() => {
+          this._gloveSkillCooldown = false;
+        }, 1000);
       });
     }
 
