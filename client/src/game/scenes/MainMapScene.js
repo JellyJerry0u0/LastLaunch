@@ -73,11 +73,7 @@ export default class MainMapScene extends Phaser.Scene {
       }
     });
     this.currentUsers = data.currentUsers || [];
-    // 참가자별 캐릭터 정보 맵 생성
-    this.userCharacterMap = {};
-    for (const user of this.currentUsers) {
-      this.userCharacterMap[user.id] = user.character || 'RACCOONSPRITESHEET.png';
-    }
+    // userCharacterMap 제거
   }
 
   preload() {
@@ -182,9 +178,9 @@ export default class MainMapScene extends Phaser.Scene {
     socket.on('playersUpdate', ({ players }) => {
       Object.entries(players).forEach(([id, player]) => {
         if (!id || id === "undefined") return;
-        // 방어 코드 제거: 텍스처 존재 여부 체크하지 않음
+        // Player 생성 시 텍스처 키로 id 사용
         if (!this.players[id]) {
-          this.players[id] = new Player(this, id, player.x, player.y, id === this.myId ? 0x00ffcc : 0xffcc00, this.userCharacterMap[id]);
+          this.players[id] = new Player(this, id, player.x, player.y, id === this.myId ? 0x00ffcc : 0xffcc00, id);
           this.physics.add.collider(this.players[id].sprite, this.propLayer);
           this.physics.add.collider(this.players[id].sprite, this.wall_layer_1);
           this.physics.add.collider(this.players[id].sprite, this.wall_layer_2);
