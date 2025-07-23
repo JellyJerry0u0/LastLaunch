@@ -239,6 +239,20 @@ export default class MainMapScene extends Phaser.Scene {
         this.players[fromId].showGloveEffect(direction);
       }
     });
+    // water 레이어와 충돌 시 스폰 위치로 이동
+    this.physics.add.collider(this.players[this.myId].sprite, water, () => {
+      // 플레이어를 스폰 위치로 이동
+      this.players[this.myId].sprite.x = this.initialPosition.x;
+      this.players[this.myId].sprite.y = this.initialPosition.y;
+      // 서버에도 위치 갱신
+      socket.emit('move', {
+        roomId: this.roomId,
+        userId: this.myId,
+        scene: this.scene.key,
+        x: this.initialPosition.x,
+        y: this.initialPosition.y
+      });
+    });
   }
 
   update() {
