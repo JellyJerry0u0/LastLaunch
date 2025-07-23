@@ -181,25 +181,21 @@ export default class MainMapScene extends Phaser.Scene {
         // Player 생성 시 텍스처 키로 id 사용
         if (!this.players[id]) {
           this.players[id] = new Player(this, id, player.x, player.y, id === this.myId ? 0x00ffcc : 0xffcc00, id);
-          this.physics.add.collider(this.players[id].sprite, this.propLayer);
-          this.physics.add.collider(this.players[id].sprite, this.wall_layer_1);
-          this.physics.add.collider(this.players[id].sprite, this.wall_layer_2);
+        //   this.physics.add.collider(this.players[id].sprite, this.propLayer);
+          this.physics.add.collider(this.players[id].sprite, this.wall_0);
+          this.physics.add.collider(this.players[id].sprite, this.wall_1);
         } else {
           const sprite = this.players[id].sprite;
-          const dist = Math.hypot(sprite.x - player.x, sprite.y - player.y);
           // === 텔레포트 신호가 온 경우 ===
           if (isTeleport && (sprite.x !== player.x || sprite.y !== player.y)) {
             sprite.x = player.x;
             sprite.y = player.y;
-            
             this.players[id].target.x = player.x;
             this.players[id].target.y = player.y;
           } else {
-            // 평소에는 기존 방식대로 target만 갱신
-            if (id !== this.myId) {
-              this.players[id].target.x = player.destX;
-              this.players[id].target.y = player.destY;
-            }
+            // 평소에는 target만 갱신 (모든 플레이어)
+            this.players[id].target.x = player.destX;
+            this.players[id].target.y = player.destY;
           }
         }
       });
