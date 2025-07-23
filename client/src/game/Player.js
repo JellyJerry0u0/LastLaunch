@@ -15,6 +15,7 @@ export default class Player {
     this.speedMultiplier = 1; // 기본값
     this.lastDirection = 'down'; // 마지막 이동 방향
     this.isKnockback = false;
+    this.deathCount = 0; // 데스카운트
     // console.log("Player constructor : ", this.id, this.scene, this.sprite, this.target, this.speed);
   }
 

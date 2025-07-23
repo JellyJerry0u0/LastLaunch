@@ -297,7 +297,15 @@ io.on('connection', (socket) => {
     if(userId === undefined) {
       console.log("userId is undefined in server (join_scene)");
     }
-    roomPlayers[roomId][scene][userId] = { x: position.x, y: position.y, destX: position.x, destY: position.y};
+    // 캐릭터 정보 저장 (room.currentUsers에서 찾아서 할당)
+    let character = null;
+    const room = GameRoom.collection && GameRoom.collection.name ? null : null; // placeholder
+    // 실제로는 DB에서 room.currentUsers를 찾아야 함
+    // 여기서는 클라이언트에서 join_scene에 character를 추가로 보내도록 하거나,
+    // 또는 별도 selectCharacter 이벤트에서 roomPlayers에 할당해도 됨
+    // 임시로 character를 position.character에서 받는다고 가정
+    if (position && position.character) character = position.character;
+    roomPlayers[roomId][scene][userId] = { x: position.x, y: position.y, destX: position.x, destY: position.y, character };
     // console.log("roomPlayers[roomId][scene][userId] in server (join_scene) : ", roomPlayers[roomId][scene][userId]);
   });
   socket.on('itemPick', ({ roomId, scene, itemId }) => {
@@ -384,13 +392,28 @@ io.on('connection', (socket) => {
       roomPlayers[roomId][scene] &&
       roomPlayers[roomId][scene][userId]
     ) {
-      // 즉시 위치를 바꾼다
-      roomPlayers[roomId][scene][userId].x = x;
-      roomPlayers[roomId][scene][userId].y = y;
-      roomPlayers[roomId][scene][userId].destX = x;
-      roomPlayers[roomId][scene][userId].destY = y;
-      // 즉시 동기화
-      io.to(roomId + "_" + scene).emit('playersUpdate', { players: roomPlayers[roomId][scene], isTeleport: true });
+      const player = roomPlayers[roomId][scene][userId];
+      // 이미 같은 위치에 있으면 deathCount 증가시키지 않음 (중복 teleport 방지)
+      if (player.x === x && player.y === y) {
+        return;
+      }
+      player.x = x;
+      player.y = y;
+      player.destX = x;
+      player.destY = y;
+
+      if (!player.deathCount) player.deathCount = 0;
+      player.deathCount += 1;
+
+      io.to(roomId + '_' + scene).emit('deathBoardUpdate', {
+        deathBoard: Object.entries(roomPlayers[roomId][scene]).map(([id, p]) => ({
+          id,
+          deathCount: p.deathCount || 0,
+          character: p.character || null
+        }))
+      });
+
+      io.to(roomId + '_' + scene).emit('playersUpdate', { players: roomPlayers[roomId][scene], isTeleport: true });
     }
   });
   // 글러브 스킬(밀어내기) 처리

@@ -58,6 +58,13 @@ export default class MainMapScene extends Phaser.Scene {
     this.players[this.myId] = new Player(this, this.myId, this.initialPosition.x, this.initialPosition.y, 0x00ffcc, this.myId);
     this.players[this.myId].sprite.setFrame(20); // idle 프레임 명확히 지정
     this.myPlayer = this.players[this.myId];
+    // 모든 플레이어의 deathCount 0으로 초기화 (currentUsers 기준)
+    this.deathBoard = [];
+    if (this.currentUsers) {
+      for (const user of this.currentUsers) {
+        if (this.players[user.id]) this.players[user.id].deathCount = 0;
+      }
+    }
     // === 포탈 상태 요청 및 핸들러 등록 ===
     socket.emit('requestPortalStatus', { roomId: this.roomId });
     socket.off('portalStatus');
@@ -205,9 +212,9 @@ export default class MainMapScene extends Phaser.Scene {
         // Player 생성 시 텍스처 키로 id 사용
         if (!this.players[id]) {
           this.players[id] = new Player(this, id, player.x, player.y, id === this.myId ? 0x00ffcc : 0xffcc00, id);
-        //   this.physics.add.collider(this.players[id].sprite, this.propLayer);
           this.physics.add.collider(this.players[id].sprite, this.wall_0);
           this.physics.add.collider(this.players[id].sprite, this.wall_1);
+          this.players[id].deathCount = 0;
         } else {
           const sprite = this.players[id].sprite;
           // === 텔레포트 신호가 온 경우 ===
@@ -223,12 +230,24 @@ export default class MainMapScene extends Phaser.Scene {
           }
         }
       });
-      Object.keys(this.players).forEach(id => {
-        if (!players[id]) {
-          this.players[id].sprite.destroy();
-          delete this.players[id];
-        }
-      });
+      // === 데스카운트 데이터 갱신 및 이벤트 디스패치 ===
+      this.deathBoardData = (this.currentUsers || []).map(user => ({
+        id: user.id,
+        deathCount: this.players[user.id] ? this.players[user.id].deathCount : 0,
+        character: user.character || null
+      }));
+      window.dispatchEvent(new CustomEvent('deathBoardUpdate', { detail: this.deathBoardData }));
+    });
+    // === 서버 deathBoardUpdate 소켓 이벤트 수신 ===
+    socket.off('deathBoardUpdate');
+    socket.on('deathBoardUpdate', ({ deathBoard }) => {
+      // 서버 deathBoard 정보로 로컬 deathCount 갱신
+      if (Array.isArray(deathBoard)) {
+        deathBoard.forEach(({ id, deathCount }) => {
+          if (this.players[id]) this.players[id].deathCount = deathCount;
+        });
+        window.dispatchEvent(new CustomEvent('deathBoardUpdate', { detail: deathBoard }));
+      }
     });
     //넉백 신호 수신
     socket.off('knockback')
@@ -255,7 +274,7 @@ export default class MainMapScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-A', () => { this.aKeyDown = true; });
     this.input.keyboard.on('keyup-A', () => { this.aKeyDown = false; });
     
-    socket.emit('join_scene', { roomId: this.roomId, userId: this.myId, scene: 'MainMapScene',position :this.initialPosition });
+    socket.emit('join_scene', { roomId: this.roomId, userId: this.myId, scene: 'MainMapScene', position: { ...this.initialPosition, character: this.character.sprite } });
     // 인벤토리 생성 및 데이터 반영
     if (this.inventory) {
       this.inventory.items = this.items;
@@ -268,6 +287,28 @@ export default class MainMapScene extends Phaser.Scene {
         this.players[fromId].showGloveEffect(direction);
       }
     });
+    // === 데스카운트 UI 관련 Phaser 오브젝트 제거 ===
+    this.deathBoardData = [];
+    // === 왼쪽 위 데스카운트 UI 생성 ===
+    // UI 그룹 및 엔트리 초기화 (create에서 1회만)
+    // if (!this.deathBoardGroup) {
+    //   this.deathBoardGroup = this.add.group();
+    //   this.deathBoardBG = this.add.graphics();
+    //   this.deathBoardBG.fillStyle(0x222222, 0.7);
+    //   this.deathBoardBG.fillRoundedRect(10, 10, 220, 340, 16);
+    //   this.deathBoardBG.setScrollFactor(0);
+    //   this.deathBoardGroup.add(this.deathBoardBG);
+    //   this.deathBoardEntries = [];
+    //   for (let i = 0; i < 4; i++) {
+    //     const y = 20 + i * 80;
+    //     // 초상화: 스프라이트시트 1번 프레임을 drawImage로 대체(없으면 사각형)
+    //     const portrait = this.add.rectangle(20 + 32, y + 32, 64, 64, 0x444444).setScrollFactor(0);
+    //     const idText = this.add.text(100, y + 10, '', { fontSize: '18px', fill: '#fff' }).setScrollFactor(0);
+    //     const deathText = this.add.text(100, y + 40, '', { fontSize: '16px', fill: '#ff6666' }).setScrollFactor(0);
+    //     this.deathBoardGroup.addMultiple([portrait, idText, deathText]);
+    //     this.deathBoardEntries.push({ portrait, idText, deathText });
+    //   }
+    // }
     // water 레이어와 충돌 시 스폰 위치로 순간이동
     this.physics.add.overlap(this.players[this.myId].sprite, water, (playerSprite, tileLayer) => {
         if (this.isRespawning) return;
@@ -296,21 +337,46 @@ export default class MainMapScene extends Phaser.Scene {
     const dx = this.myPlayer.sprite.x - MAIN_MAP_PORTAL_POSITION['3to2Portal'].x;
     const dy = this.myPlayer.sprite.y - MAIN_MAP_PORTAL_POSITION['3to2Portal'].y;
     if(Math.hypot(dx, dy) < 40 && this.aKeyDown) {
-        this.Portal1.moveWithinScene();
+        // this.Portal1.moveWithinScene(); // This line was removed as Portal1 is removed
     }
 
     const hx = this.myPlayer.sprite.x - MAIN_MAP_PORTAL_POSITION['2to1Portal'].x;
     const hy = this.myPlayer.sprite.y - MAIN_MAP_PORTAL_POSITION['2to1Portal'].y;
     if(Math.hypot(hx, hy) < 40 && this.aKeyDown) {
-        this.Portal2.moveWithinScene();
-
+        // this.Portal2.moveWithinScene(); // This line was removed as Portal2 is removed
     }
     const ex = this.myPlayer.sprite.x - MAIN_MAP_PORTAL_POSITION['1to2Portal'].x;
     const ey = this.myPlayer.sprite.y - MAIN_MAP_PORTAL_POSITION['1to2Portal'].y;
     if(Math.hypot(ex, ey) < 40 && this.aKeyDown) {
-        this.Portal3.moveWithinScene();
+        // this.Portal3.moveWithinScene(); // This line was removed as Portal3 is removed
     }
 
     Object.values(this.players).forEach(player => player.update());
+
+    // === 데스카운트 UI 위치/스케일 카메라에 맞게 보정 ===
+    // if (this.deathBoardEntries && this.deathBoardBG) { // This block was removed as deathBoardGroup and BG are removed
+    //   const cam = this.cameras.main;
+    //   const baseX = cam.scrollX + 20 / cam.zoom;
+    //   const baseY = cam.scrollY + 20 / cam.zoom;
+    //   // 배경 위치/스케일
+    //   this.deathBoardBG.setPosition(baseX - 10, baseY - 10);
+    //   this.deathBoardBG.setScale(1 / cam.zoom);
+    //   for (let i = 0; i < this.deathBoardEntries.length; i++) {
+    //     const entry = this.deathBoardEntries[i];
+    //     const y = baseY + i * 80 / cam.zoom;
+    //     if (entry.portrait) {
+    //       entry.portrait.setPosition(baseX + 32, y + 32);
+    //       entry.portrait.setScale(1 / cam.zoom);
+    //     }
+    //     if (entry.portraitImage) {
+    //       entry.portraitImage.setPosition(baseX + 32, y + 32);
+    //       entry.portraitImage.setScale(64 / entry.portraitImage.width / cam.zoom);
+    //     }
+    //     entry.idText.setPosition(baseX + 100, y + 10);
+    //     entry.idText.setFontSize(18 / cam.zoom);
+    //     entry.deathText.setPosition(baseX + 100, y + 40);
+    //     entry.deathText.setFontSize(16 / cam.zoom);
+    //   }
+    // }
   }
 } 
