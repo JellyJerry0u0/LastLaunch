@@ -191,6 +191,7 @@ export default class MainMapScene extends Phaser.Scene {
           if (isTeleport && (sprite.x !== player.x || sprite.y !== player.y)) {
             sprite.x = player.x;
             sprite.y = player.y;
+            
             this.players[id].target.x = player.x;
             this.players[id].target.y = player.y;
           } else {
