@@ -99,6 +99,30 @@ export default class MainMapScene extends Phaser.Scene {
     if (this.currentUsers) {
       for (const user of this.currentUsers) {
         this.anims.create({
+          key: `idle-down-${user.id}`,
+          frames: this.anims.generateFrameNumbers(user.id, { start: 0, end: 3 }),
+          frameRate: 10,
+          repeat: -1
+        });
+        this.anims.create({
+          key: `idle-up-${user.id}`,
+          frames: this.anims.generateFrameNumbers(user.id, { start: 12, end: 15 }),
+          frameRate: 10,
+          repeat: -1
+        });
+        this.anims.create({
+          key: `idle-left-${user.id}`,
+          frames: this.anims.generateFrameNumbers(user.id, { start: 8, end: 11 }),
+          frameRate: 10,
+          repeat: -1
+        });
+        this.anims.create({
+          key: `idle-right-${user.id}`,
+          frames: this.anims.generateFrameNumbers(user.id, { start: 4, end: 7 }),
+          frameRate: 10,
+          repeat: -1
+        });
+        this.anims.create({
           key: `walk-down-${user.id}`,
           frames: this.anims.generateFrameNumbers(user.id, { start: 20, end: 27 }),
           frameRate: 10,
@@ -279,7 +303,7 @@ export default class MainMapScene extends Phaser.Scene {
     const hy = this.myPlayer.sprite.y - MAIN_MAP_PORTAL_POSITION['2to1Portal'].y;
     if(Math.hypot(hx, hy) < 40 && this.aKeyDown) {
         this.Portal2.moveWithinScene();
-        
+
     }
     const ex = this.myPlayer.sprite.x - MAIN_MAP_PORTAL_POSITION['1to2Portal'].x;
     const ey = this.myPlayer.sprite.y - MAIN_MAP_PORTAL_POSITION['1to2Portal'].y;

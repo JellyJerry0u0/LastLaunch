@@ -193,8 +193,10 @@ export default class Player {
       this.sprite.x = this.target.x;
       this.sprite.y = this.target.y;
       // 멈췄을 때 애니메이션 정지 + idle 프레임 고정
-      this.sprite.anims.stop();
-      this.sprite.setFrame(this.getIdleFrame(this.lastDirection));
+      const idleKey = `idle-${this.lastDirection}-${this.id}`;
+      if (this.sprite.anims.currentAnim?.key !== idleKey) {
+        this.sprite.anims.play(idleKey, true);
+      }
     }
   }
 
