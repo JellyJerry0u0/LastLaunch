@@ -263,6 +263,7 @@ io.on('connection', (socket) => {
       socket.emit('startGameFail', { error: '모든 참가자가 준비되지 않았습니다.' });
       return;
     }
+    roomPlayers[roomId] = {};
     // 게임 시작 신호 + 모든 참가자 캐릭터 정보 포함
     io.to(roomId).emit('startGameSuccess', { currentUsers: room.currentUsers });
   });
