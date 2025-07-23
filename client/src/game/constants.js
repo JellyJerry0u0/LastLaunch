@@ -1,8 +1,12 @@
 export const GAME_WIDTH = 2500;
 export const GAME_HEIGHT = 2500;
+export const TILE_SIZE = 32;
 
 export const MAIN_MAP_WIDTH = 2500;
 export const MAIN_MAP_HEIGHT = 2500;
+
+
+
 
 export const INITIAL_POSITION = {
     "StartingPoint": {
@@ -31,8 +35,25 @@ export const INITIAL_POSITION = {
 export const HOUSE_SIZE = 120;
 export const MINE_SIZE = 200;
 
-export const TILE_SIZE = 32;
 
+export const STARTING_POINT = {
+    "FOX": {
+        "x": 5*TILE_SIZE + 16,
+        "y": 6*TILE_SIZE + 16
+    },
+    "CAT": {
+        "x": 5*TILE_SIZE + 16,
+        "y": 32*TILE_SIZE + 16
+    },
+    "BIRD": {
+        "x": 29*TILE_SIZE + 16,
+        "y": 5*TILE_SIZE + 16
+    },
+    "RACCOON": {
+        "x": 36*TILE_SIZE + 16,
+        "y": 32*TILE_SIZE + 16
+    }
+}
 // 색상 등 기타 상수
 export const HOUSE_COLOR = 0xffa500;
 export const MINE_COLOR = 0x888888;

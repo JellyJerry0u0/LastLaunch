@@ -1,11 +1,13 @@
 import socket from '../services/socket';
 
 export default class Player {
-  constructor(scene, id, x, y, color = 0x00ffcc) {
+  constructor(scene, id, x, y, color = 0x00ffcc, spriteKey = 'player') {
     this.id = id;
     this.scene = scene;
-    this.sprite = scene.physics.add.sprite(x, y, 'player').setDepth(10);
-    this.sprite;
+    this.sprite = scene.physics.add.sprite(x, y, spriteKey).setDepth(10);
+    this.sprite.setVisible(false); // 처음엔 숨김
+    this.sprite.setFrame(20);      // idle 프레임 지정
+    this.sprite.setVisible(true);  // 바로 보이게
     scene.physics.add.existing(this.sprite);
     this.sprite.body.setCollideWorldBounds(true);
     this.target = { x, y };
@@ -170,19 +172,19 @@ export default class Player {
       if (Math.abs(dx) > Math.abs(dy)) {
         // 좌우 이동이 더 큼
         if (dx > 0) {
-          this.sprite.anims.play('walk-right', true);
+          this.sprite.anims.play(`walk-right-${this.id}`, true);
           this.lastDirection = 'right';
         } else {
-          this.sprite.anims.play('walk-left', true);
+          this.sprite.anims.play(`walk-left-${this.id}`, true);
           this.lastDirection = 'left';
         }
       } else {
         // 상하 이동이 더 큼
         if (dy > 0) {
-          this.sprite.anims.play('walk-down', true);
+          this.sprite.anims.play(`walk-down-${this.id}`, true);
           this.lastDirection = 'down';
         } else {
-          this.sprite.anims.play('walk-up', true);
+          this.sprite.anims.play(`walk-up-${this.id}`, true);
           this.lastDirection = 'up';
         }
       }
@@ -197,6 +199,7 @@ export default class Player {
   }
 
   getIdleFrame(direction) {
+    // 각 캐릭터별로 idle 프레임이 다를 수 있으나, 기본적으로 walk 애니메이션의 첫 프레임 사용
     switch (direction) {
       case 'down': return 20;
       case 'left': return 28;
